@@ -3,27 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRINT - AIR MAGIC 2026</title>
+    <title>PRINT - NEURAL ART 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
     <style>
-        :root { --neon: #00ffff; --pink: #ff00ff; --yellow: #ffff00; }
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Arial Black', sans-serif; }
+        :root { --neon: #00ffff; --pink: #ff00ff; --surface: rgba(255, 255, 255, 0.08); }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         
-        /* واجهة المستخدم الهوائية */
-        .air-ui { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 1000; }
-        .air-btn { width: 90px; height: 90px; background: rgba(0,0,0,0.6); border: 4px solid #fff; border-radius: 20px; 
-                  display: flex; justify-content: center; align-items: center; font-size: 40px; transition: 0.3s;
-                  box-shadow: 0 8px 0 #444, 0 0 20px rgba(255,255,255,0.2); }
-        .air-btn.hovered { transform: scale(1.2) translateY(-10px); border-color: var(--neon); box-shadow: 0 15px 30px var(--neon); }
+        /* واجهة راقية جداً */
+        .air-ui { position: fixed; top: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: 40px; z-index: 1000; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 30px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .air-btn { width: 100px; height: 100px; background: var(--surface); border: 2px solid transparent; border-radius: 25px; display: flex; justify-content: center; align-items: center; font-size: 45px; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: none; }
+        .air-btn.hovered { transform: scale(1.15) translateY(-10px); border-color: var(--neon); box-shadow: 0 20px 40px rgba(0, 255, 255, 0.3); background: rgba(0, 255, 255, 0.1); }
         
         canvas { position: absolute; inset: 0; transform: scaleX(-1); }
-        video { position: absolute; width: 180px; bottom: 20px; right: 20px; transform: scaleX(-1); border-radius: 20px; border: 3px solid var(--neon); opacity: 0.7; }
+        /* الكاميرا مخفية تماماً ولكنها تعمل في الخلفية */
+        video { position: absolute; visibility: hidden; pointer-events: none; }
         
-        #cursor { position: fixed; width: 30px; height: 30px; border: 3px solid white; border-radius: 50%; 
-                  pointer-events: none; z-index: 2000; box-shadow: 0 0 20px #fff; transition: 0.1s; }
+        #cursor { position: fixed; width: 20px; height: 20px; background: white; border-radius: 50%; pointer-events: none; z-index: 2000; box-shadow: 0 0 15px #fff; transition: transform 0.1s; display: none; }
         
-        .footer { position: fixed; bottom: 10px; left: 20px; color: var(--neon); font-size: 14px; letter-spacing: 2px; }
+        .footer { position: fixed; bottom: 20px; left: 30px; color: var(--neon); font-size: 14px; letter-spacing: 3px; font-weight: bold; opacity: 0.8; }
+        
+        /* أنيميشن الدخول */
+        @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -100%); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .air-ui { animation: fadeIn 1s ease-out; }
     </style>
 </head>
 <body>
@@ -47,21 +50,21 @@ const cursor = document.getElementById('cursor');
 
 let points = [];
 let color = '#00ffff';
-let isDrawing = false;
 let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-// صوت التفاعل
-function beep(freq) {
+// صوت نقر احترافي
+function playClickSfx() {
     const osc = audioCtx.createOscillator();
     const g = audioCtx.createGain();
-    osc.frequency.value = freq;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
     osc.connect(g); g.connect(audioCtx.destination);
     osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
 
 const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.8 });
+hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.8, minTrackingConfidence: 0.8 });
 
 hands.onResults(results => {
     canvas.width = window.innerWidth;
@@ -70,35 +73,40 @@ hands.onResults(results => {
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const landmarks = results.multiHandLandmarks[0];
+        cursor.style.display = 'block';
+        
+        // 1. تجسيد الإيد كخطوط متصلة (Skeleton)
+        drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {color: 'rgba(255, 255, 255, 0.4)', lineWidth: 2});
+        drawLandmarks(ctx, landmarks, {color: color, lineWidth: 1, radius: 3});
+
         const tip = landmarks[8]; // السبابة
         const thumb = landmarks[4]; // الإبهام
-        
         const x = (1 - tip.x) * canvas.width;
         const y = tip.y * canvas.height;
 
-        // تحريك المؤشر
+        // تحريك المؤشر مع السبابة
         cursor.style.left = x + 'px';
         cursor.style.top = y + 'px';
 
-        // حساب المسافة بين السبابة والإبهام (عشان نرسم لما يلمسوا بعض في الهوا)
+        // 2. الرسم بالسبابة (عند ملامسة الإبهام)
         const dist = Math.hypot(tip.x - thumb.x, tip.y - thumb.y);
-        
-        if (dist < 0.05) { // لو قربت صوابعك من بعض "كأنك ماسك قلم"
+        if (dist < 0.05) {
             points.push({ x, y, c: color });
-            cursor.style.background = color;
-        } else {
-            cursor.style.background = 'transparent';
         }
 
+        // 3. النقر بالسبابة (تفاعل ذكي)
         checkCollision(x, y);
+    } else {
+        cursor.style.display = 'none';
     }
 
-    // رسم الخطوط بستايل نيون
+    // رسم الخطوط (سلسلة الكتابة)
     ctx.lineCap = 'round';
-    ctx.lineWidth = 8;
-    ctx.shadowBlur = 15;
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 6;
     for(let i = 1; i < points.length; i++) {
         ctx.strokeStyle = points[i].c;
+        ctx.shadowBlur = 10;
         ctx.shadowColor = points[i].c;
         ctx.beginPath();
         ctx.moveTo(points[i-1].x, points[i-1].y);
@@ -114,8 +122,12 @@ function checkCollision(x, y) {
         if (x > r.left && x < r.right && y > r.top && y < r.bottom) {
             if (!btn.classList.contains('hovered')) {
                 btn.classList.add('hovered');
-                beep(800);
-                setTimeout(() => execute(btn.id), 800); // تفعيل بعد ثبات نص ثانية
+                setTimeout(() => {
+                    if (btn.classList.contains('hovered')) {
+                        playClickSfx();
+                        execute(btn.id);
+                    }
+                }, 1000); // ثانية واحدة للتفعيل
             }
         } else {
             btn.classList.remove('hovered');
@@ -124,11 +136,11 @@ function checkCollision(x, y) {
 }
 
 function execute(id) {
-    if (id === 'btn-clear') { points = []; beep(200); }
-    if (id === 'btn-brush') { color = `hsl(${Math.random()*360}, 100%, 50%)`; beep(1200); }
+    if (id === 'btn-clear') points = [];
+    if (id === 'btn-brush') color = `hsl(${Math.random()*360}, 100%, 60%)`;
     if (id === 'btn-save') {
         const link = document.createElement('a');
-        link.download = 'PRINT_KIMO_ART.png';
+        link.download = 'PRINT_KIMO_2026.png';
         link.href = canvas.toDataURL();
         link.click();
     }
