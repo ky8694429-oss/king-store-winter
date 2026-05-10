@@ -2,181 +2,143 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PRINT - GAMING WORLD 2026</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRINT - AIR MAGIC 2026</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-
     <style>
-        :root { --neon: #00ffff; --gold: #ffcc00; --pink: #ff00ff; }
-        body { margin: 0; background: #000; color: white; font-family: 'Arial Black', sans-serif; overflow: hidden; touch-action: none; }
+        :root { --neon: #00ffff; --pink: #ff00ff; --yellow: #ffff00; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Arial Black', sans-serif; }
         
-        /* دخلة الألعاب */
-        #game-loader { position: fixed; inset: 0; background: linear-gradient(45deg, #000, #1a1a1a); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 5px solid var(--neon); }
-        .play-btn { background: var(--neon); color: #000; padding: 20px 60px; font-size: 2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 0 50px var(--neon); border: none; font-weight: 900; animation: bounce 1s infinite; }
-        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-
-        /* الشاشة الرئيسية */
-        canvas { position: absolute; inset: 0; filter: drop-shadow(0 0 10px var(--neon)); }
-        #camera-feed { position: absolute; width: 150px; height: 100px; bottom: 20px; left: 20px; border: 2px solid var(--neon); border-radius: 10px; opacity: 0.5; transform: scaleX(-1); }
+        /* واجهة المستخدم الهوائية */
+        .air-ui { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 1000; }
+        .air-btn { width: 90px; height: 90px; background: rgba(0,0,0,0.6); border: 4px solid #fff; border-radius: 20px; 
+                  display: flex; justify-content: center; align-items: center; font-size: 40px; transition: 0.3s;
+                  box-shadow: 0 8px 0 #444, 0 0 20px rgba(255,255,255,0.2); }
+        .air-btn.hovered { transform: scale(1.2) translateY(-10px); border-color: var(--neon); box-shadow: 0 15px 30px var(--neon); }
         
-        /* أيقونات Subway */
-        .hud-ui { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 500; }
-        .game-icon { width: 80px; height: 80px; background: var(--glass); border: 4px solid #fff; border-radius: 20px; display: flex; justify-content: center; align-items: center; font-size: 2.5rem; cursor: pointer; transition: 0.2s; box-shadow: 0 10px 0 #555; }
-        .game-icon:active { transform: translateY(10px); box-shadow: 0 0 0 #555; }
-        .game-icon:hover { background: var(--neon); transform: rotate(10deg); }
-
-        .score-board { position: fixed; top: 20px; right: 20px; font-size: 20px; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
-        #install-tab { position: fixed; bottom: 20px; right: 20px; background: var(--pink); color: #fff; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
+        canvas { position: absolute; inset: 0; transform: scaleX(-1); }
+        video { position: absolute; width: 180px; bottom: 20px; right: 20px; transform: scaleX(-1); border-radius: 20px; border: 3px solid var(--neon); opacity: 0.7; }
+        
+        #cursor { position: fixed; width: 30px; height: 30px; border: 3px solid white; border-radius: 50%; 
+                  pointer-events: none; z-index: 2000; box-shadow: 0 0 20px #fff; transition: 0.1s; }
+        
+        .footer { position: fixed; bottom: 10px; left: 20px; color: var(--neon); font-size: 14px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
-<div id="game-loader">
-    <h1 style="color: var(--neon); margin-bottom: 40px; font-size: 4rem;">PRINT AI</h1>
-    <button class="play-btn" onclick="startGame()">P L A Y</button>
-    <p style="margin-top: 20px;">[ AUTO-CONTROL ENABLED ]</p>
+<div class="air-ui">
+    <div class="air-btn" id="btn-clear">🗑️</div>
+    <div class="air-btn" id="btn-brush">🎨</div>
+    <div class="air-btn" id="btn-save">💾</div>
 </div>
 
-<div class="hud-ui">
-    <div class="game-icon" id="clear">🗑️</div>
-    <div class="game-icon" id="color">🎨</div>
-    <div class="game-icon" id="save">💾</div>
-</div>
-
-<div class="score-board">COMBO: <span id="combo">0</span></div>
-<div id="install-tab">تنزيل اللعبة 🎮</div>
-
-<video id="camera-feed" playsinline></video>
-<canvas id="game-canvas"></canvas>
+<div id="cursor"></div>
+<video id="webcam" autoplay playsinline></video>
+<canvas id="main-canvas"></canvas>
+<div class="footer">2026 POWERED BY KIMO</div>
 
 <script>
-const canvas = document.getElementById('game-canvas');
+const video = document.getElementById('webcam');
+const canvas = document.getElementById('main-canvas');
 const ctx = canvas.getContext('2d');
-const video = document.getElementById('camera-feed');
-let particles = [];
-let combo = 0;
-let currentColor = '#00ffff';
-let audioCtx;
+const cursor = document.getElementById('cursor');
 
-// صوت ألعاب
-function playSfx(f, type = 'square') {
-    if(!audioCtx) return;
+let points = [];
+let color = '#00ffff';
+let isDrawing = false;
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// صوت التفاعل
+function beep(freq) {
     const osc = audioCtx.createOscillator();
     const g = audioCtx.createGain();
-    osc.type = type; osc.frequency.value = f;
+    osc.frequency.value = freq;
     g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
     osc.connect(g); g.connect(audioCtx.destination);
     osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
 
-function startGame() {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    playSfx(440);
-    document.getElementById('game-loader').style.display = 'none';
-    init();
-}
+const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.8 });
 
-// نظام الجزيئات (Particles)
-class Particle {
-    constructor(x, y, color) {
-        this.x = x; this.y = y;
-        this.color = color;
-        this.size = Math.random() * 10 + 5;
-        this.speedX = Math.random() * 6 - 3;
-        this.speedY = Math.random() * 6 - 3;
+hands.onResults(results => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        const landmarks = results.multiHandLandmarks[0];
+        const tip = landmarks[8]; // السبابة
+        const thumb = landmarks[4]; // الإبهام
+        
+        const x = (1 - tip.x) * canvas.width;
+        const y = tip.y * canvas.height;
+
+        // تحريك المؤشر
+        cursor.style.left = x + 'px';
+        cursor.style.top = y + 'px';
+
+        // حساب المسافة بين السبابة والإبهام (عشان نرسم لما يلمسوا بعض في الهوا)
+        const dist = Math.hypot(tip.x - thumb.x, tip.y - thumb.y);
+        
+        if (dist < 0.05) { // لو قربت صوابعك من بعض "كأنك ماسك قلم"
+            points.push({ x, y, c: color });
+            cursor.style.background = color;
+        } else {
+            cursor.style.background = 'transparent';
+        }
+
+        checkCollision(x, y);
     }
-    update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        this.size *= 0.95;
+
+    // رسم الخطوط بستايل نيون
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 8;
+    ctx.shadowBlur = 15;
+    for(let i = 1; i < points.length; i++) {
+        ctx.strokeStyle = points[i].c;
+        ctx.shadowColor = points[i].c;
+        ctx.beginPath();
+        ctx.moveTo(points[i-1].x, points[i-1].y);
+        ctx.lineTo(points[i].x, points[i].y);
+        ctx.stroke();
     }
-    draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
-    }
-}
+});
 
-// التحكم باللمس والماوس (عشان لو الكاميرا فصلت)
-window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-window.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX, e.touches[0].clientY));
-
-function handleMove(x, y) {
-    for(let i=0; i<3; i++) particles.push(new Particle(x, y, currentColor));
-    combo++;
-    document.getElementById('combo').innerText = combo;
-    checkButtons(x, y);
-}
-
-function checkButtons(x, y) {
-    const btns = document.querySelectorAll('.game-icon');
+function checkCollision(x, y) {
+    const btns = document.querySelectorAll('.air-btn');
     btns.forEach(btn => {
         const r = btn.getBoundingClientRect();
-        if(x > r.left && x < r.right && y > r.top && y < r.bottom) {
-            if(!btn.dataset.active) {
-                btn.dataset.active = "true";
-                trigger(btn.id);
+        if (x > r.left && x < r.right && y > r.top && y < r.bottom) {
+            if (!btn.classList.contains('hovered')) {
+                btn.classList.add('hovered');
+                beep(800);
+                setTimeout(() => execute(btn.id), 800); // تفعيل بعد ثبات نص ثانية
             }
-        } else { delete btn.dataset.active; }
+        } else {
+            btn.classList.remove('hovered');
+        }
     });
 }
 
-function trigger(id) {
-    playSfx(880, 'sine');
-    if(id === 'clear') { particles = []; combo = 0; }
-    if(id === 'color') currentColor = `hsl(${Math.random()*360}, 100%, 50%)`;
-    if(id === 'save') {
+function execute(id) {
+    if (id === 'btn-clear') { points = []; beep(200); }
+    if (id === 'btn-brush') { color = `hsl(${Math.random()*360}, 100%, 50%)`; beep(1200); }
+    if (id === 'btn-save') {
         const link = document.createElement('a');
-        link.download = 'PRINT_WIN.png';
+        link.download = 'PRINT_KIMO_ART.png';
         link.href = canvas.toDataURL();
         link.click();
     }
 }
 
-// تشغيل الكاميرا والـ AI كخيار إضافي
-async function init() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
-    hands.setOptions({maxNumHands: 1, minDetectionConfidence: 0.7});
-    hands.onResults(res => {
-        if(res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
-            const tip = res.multiHandLandmarks[0][8];
-            handleMove((1 - tip.x) * canvas.width, tip.y * canvas.height);
-        }
-    });
-
-    const cam = new Camera(video, {
-        onFrame: async () => { await hands.send({image: video}); },
-        width: 1280, height: 720
-    });
-    cam.start().catch(() => console.log("Camera Blocked - Mouse Control Active"));
-
-    function animate() {
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        particles.forEach((p, i) => {
-            p.update(); p.draw();
-            if(p.size < 0.5) particles.splice(i, 1);
-        });
-        requestAnimationFrame(animate);
-    }
-    animate();
-}
-
-// نظام الـ PWA
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('install-tab');
-    btn.style.display = 'block';
-    btn.onclick = () => e.prompt();
+const camera = new Camera(video, {
+    onFrame: async () => { await hands.send({image: video}); },
+    width: 1280, height: 720
 });
+camera.start();
 </script>
-
-<div style="position:fixed; bottom:10px; width:100%; text-align:center; color:var(--neon); font-size:10px; opacity:0.5;">
-    2026 POWERED BY KIMO | GAMING ENGINE v1.0
-</div>
 </body>
 </html>
