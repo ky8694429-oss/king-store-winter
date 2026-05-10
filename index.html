@@ -3,195 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KIMO QUANTUM 2026</title>
-    <link rel="manifest" href="data:application/manifest+json,{'name':'KIMO QUANTUM','short_name':'KIMO','start_url':'.','display':'standalone','background_color':'#000000','theme_color':'#00ffff','icons':[{'src':'https://cdn-icons-png.flaticon.com/512/2091/2091665.png','sizes':'512x512','type':'image/png'}]}">
+    <title>KIMO ULTIMATE 2026</title>
+    <!-- نظام التطبيق PWA -->
+    <link rel="manifest" href="data:application/manifest+json,{'name':'KIMO ULTIMATE','short_name':'KIMO','start_url':'.','display':'standalone','background_color':'#000000','theme_color':'#00ffff','icons':[{'src':'https://cdn-icons-png.flaticon.com/512/2091/2091665.png','sizes':'512x512','type':'image/png'}]}">
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 
     <style>
-        :root { --neon: #00ffff; --cyan-glow: 0 0 15px #00ffff; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #000; color: #fff; font-family: 'Courier New', Courier, monospace; overflow: hidden; }
+        :root { --neon: #00ffff; --bg: #000000; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        
+        /* دخلة فيديو سينمائية */
+        #intro-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 1s ease-in-out; }
+        .logo-box { font-size: 3rem; font-weight: 900; color: var(--neon); text-shadow: 0 0 30px var(--neon); border: 4px solid var(--neon); padding: 20px 40px; border-radius: 15px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.05); } }
 
-        /* دخلة الماتريكس */
-        #matrix-loader { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); }
-        .glitch { font-size: 3rem; font-weight: bold; text-transform: uppercase; position: relative; text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff, 0.025em 0.04em 0 #fffc00; animation: glitch 725ms infinite; }
-        @keyframes glitch { 0% { text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff, 0.025em 0.04em 0 #fffc00; } 15% { text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff, 0.025em 0.04em 0 #fffc00; } 16% { text-shadow: -0.05em -0.025em 0 #00fffc, 0.025em 0.035em 0 #fc00ff, -0.05em -0.05em 0 #fffc00; } 100% { text-shadow: -0.025em 0 0 #00fffc, -0.025em -0.025em 0 #fc00ff, -0.025em -0.05em 0 #fffc00; } }
-
-        /* الواجهة الرئيسية */
+        /* الواجهة الهولوغرامية */
+        #main-view { position: relative; width: 100vw; height: 100vh; }
         canvas { position: absolute; inset: 0; transform: scaleX(-1); }
-        #segmentation-canvas { filter: drop-shadow(0 0 10px var(--neon)) contrast(150%); opacity: 0.7; }
         video { display: none; }
 
-        /* نظام الأيقونات العائم */
-        .hud-dock { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 500; background: rgba(0, 255, 255, 0.05); padding: 20px; border-radius: 100px; border: 1px solid var(--neon); backdrop-filter: blur(10px); }
-        .hud-icon { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--neon); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; cursor: pointer; transition: 0.3s; position: relative; background: #000; box-shadow: var(--cyan-glow); }
-        .hud-icon:hover, .hud-icon.active-hover { transform: scale(1.4) rotate(360deg); background: var(--neon); color: #000; }
-        
-        /* مؤشر التحميل الدائري */
-        #cursor-ring { position: fixed; width: 80px; height: 80px; border: 3px solid var(--neon); border-radius: 50%; border-top-color: transparent; pointer-events: none; display: none; z-index: 2000; animation: rotate 1s linear infinite; }
-        @keyframes rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        /* أيقونات 3D متطورة */
+        .hud-menu { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 1000; padding: 15px; background: rgba(0,255,255,0.1); border-radius: 50px; border: 1px solid var(--neon); backdrop-filter: blur(15px); }
+        .hud-btn { width: 65px; height: 65px; border-radius: 50%; border: 2px solid var(--neon); background: #000; display: flex; justify-content: center; align-items: center; font-size: 1.8rem; cursor: pointer; transition: 0.4s; box-shadow: 0 0 15px var(--neon); }
+        .hud-btn:hover, .hud-btn.active { transform: scale(1.3) translateY(-15px); background: var(--neon); color: #000; box-shadow: 0 0 40px var(--neon); }
 
-        /* براند كيمو */
-        .kimo-tag { position: fixed; top: 20px; right: 20px; font-size: 14px; color: var(--neon); letter-spacing: 3px; border-right: 3px solid var(--neon); padding-right: 10px; }
-        
-        /* زر التنزيل */
-        #pwa-btn { position: fixed; top: 20px; left: 20px; background: var(--neon); color: #000; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; display: none; animation: pulse 2s infinite; z-index: 1000; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0); } }
+        /* إشعار التطبيق */
+        #pwa-banner { position: fixed; top: 20px; left: 20px; background: var(--neon); color: #000; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; display: none; z-index: 2000; animation: slideIn 0.5s ease; }
+        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+        .kimo-label { position: fixed; bottom: 10px; right: 20px; font-size: 14px; letter-spacing: 5px; color: var(--neon); text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<div id="matrix-loader">
-    <div class="glitch">KIMO QUANTUM</div>
-    <p id="load-status" style="margin-top: 20px; color: var(--neon);">BOOTING NEURAL NETWORK...</p>
+<div id="intro-screen">
+    <div class="logo-box">KIMO PRIME</div>
+    <p style="margin-top: 20px; color: var(--neon);">[ SYSTEM LOADING... ]</p>
+    <button onclick="unlockAudio()" style="margin-top: 30px; background: var(--neon); border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer;">بدء التشغيل بصوت 🔊</button>
 </div>
 
-<div id="pwa-btn">INSTALL KIMO APP ⚡</div>
+<div id="pwa-banner">تثبيت التطبيق 📲</div>
 
-<canvas id="segmentation-canvas"></canvas>
-<canvas id="drawing-canvas"></canvas>
-<div id="cursor-ring"></div>
-
-<div class="kimo-tag">SYSTEM v4.0 // POWERED BY KIMO 2026</div>
-
-<div class="hud-dock">
-    <div class="hud-icon" id="clear-cmd" data-type="action">🧹</div>
-    <div class="hud-icon" id="color-cmd" data-type="action">🎨</div>
-    <div class="hud-icon" id="save-cmd" data-type="action">💾</div>
+<div id="main-view">
+    <canvas id="body-canvas"></canvas>
+    <canvas id="ui-canvas"></canvas>
 </div>
+
+<div class="hud-menu">
+    <div class="hud-btn" id="btn-clear">🧹</div>
+    <div class="hud-btn" id="btn-color">🎨</div>
+    <div class="hud-btn" id="btn-save">💾</div>
+</div>
+
+<div class="kimo-label">2026 POWERED BY KIMO</div>
 
 <video id="input_video" playsinline></video>
 
 <script>
-const videoElement = document.getElementById('input_video');
-const segCanvas = document.getElementById('segmentation-canvas');
-const drawCanvas = document.getElementById('drawing-canvas');
-const sCtx = segCanvas.getContext('2d');
-const dCtx = drawCanvas.getContext('2d');
-const ring = document.getElementById('cursor-ring');
+const video = document.getElementById('input_video');
+const bodyCanvas = document.getElementById('body-canvas');
+const uiCanvas = document.getElementById('ui-canvas');
+const bCtx = bodyCanvas.getContext('2d');
+const uCtx = uiCanvas.getContext('2d');
 
-let brushColor = '#00ffff';
-let hoverStart = 0;
-let lastTarget = null;
-let points = [];
+let currentColor = '#00ffff';
+let audioReady = false;
+let audioCtx;
 
-// نظام الصوت التقني
-const audio = new (window.AudioContext || window.webkitAudioContext)();
-function beep(f, t) {
-    const osc = audio.createOscillator();
-    const g = audio.createGain();
-    osc.frequency.value = f;
-    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + t);
-    osc.connect(g); g.connect(audio.destination);
-    osc.start(); osc.stop(audio.currentTime + t);
+// تفعيل الصوت
+function unlockAudio() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioReady = true;
+    playTechSound(880, 'sine', 0.2);
+    document.getElementById('intro-screen').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('intro-screen').style.display = 'none';
+        startCamera();
+    }, 1000);
+}
+
+function playTechSound(freq, type, dur) {
+    if (!audioReady) return;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
 
 function onResults(results) {
-    segCanvas.width = drawCanvas.width = window.innerWidth;
-    segCanvas.height = drawCanvas.height = window.innerHeight;
+    bodyCanvas.width = uiCanvas.width = window.innerWidth;
+    bodyCanvas.height = uiCanvas.height = window.innerHeight;
 
-    // 1. معالجة الأجسام (تتبع كل شيء)
-    sCtx.save();
-    sCtx.clearRect(0, 0, segCanvas.width, segCanvas.height);
-    sCtx.drawImage(results.segmentationMask, 0, 0, segCanvas.width, segCanvas.height);
-    sCtx.globalCompositeOperation = 'source-in';
-    sCtx.fillStyle = brushColor;
-    sCtx.globalAlpha = 0.4;
-    sCtx.fillRect(0,0, segCanvas.width, segCanvas.height);
-    sCtx.restore();
+    // 1. تحويل أي جسم لخطوط نيون متوهجة (Segmentation)
+    bCtx.save();
+    bCtx.clearRect(0, 0, bodyCanvas.width, bodyCanvas.height);
+    if (results.segmentationMask) {
+        bCtx.drawImage(results.segmentationMask, 0, 0, bodyCanvas.width, bodyCanvas.height);
+        bCtx.globalCompositeOperation = 'source-in';
+        bCtx.fillStyle = currentColor;
+        bCtx.globalAlpha = 0.6;
+        bCtx.fillRect(0,0, bodyCanvas.width, bodyCanvas.height);
+        // إضافة تأثير الـ Glow
+        bodyCanvas.style.filter = `drop-shadow(0 0 20px ${currentColor})`;
+    }
+    bCtx.restore();
 
-    // 2. تتبع الإيد والرسم
+    // 2. تتبع الإيد والتحكم في الأيقونات
+    uCtx.clearRect(0,0, uiCanvas.width, uiCanvas.height);
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const hand = results.multiHandLandmarks[0];
-        const indexTip = hand[8];
-        const x = (1 - indexTip.x) * drawCanvas.width;
-        const y = indexTip.y * drawCanvas.height;
+        const index = hand[8];
+        const x = (1 - index.x) * uiCanvas.width;
+        const y = index.y * uiCanvas.height;
 
-        // رسم مؤشر التحكم
-        dCtx.fillStyle = '#fff';
-        dCtx.shadowColor = brushColor;
-        dCtx.shadowBlur = 20;
-        dCtx.beginPath(); dCtx.arc(x, y, 12, 0, Math.PI*2); dCtx.fill();
+        // رسم مؤشر الإيد
+        uCtx.shadowBlur = 30; uCtx.shadowColor = currentColor;
+        uCtx.fillStyle = "#fff";
+        uCtx.beginPath(); uCtx.arc(x, y, 15, 0, Math.PI*2); uCtx.fill();
 
-        handleHover(x, y);
+        checkButtons(x, y);
     }
 }
 
-function handleHover(x, y) {
-    const icons = document.querySelectorAll('.hud-icon');
-    let hit = false;
-    icons.forEach(icon => {
-        const r = icon.getBoundingClientRect();
-        if (x > r.left && x < r.right && y > r.top && y < r.bottom) {
-            hit = true;
-            icon.classList.add('active-hover');
-            ring.style.display = 'block';
-            ring.style.left = x + 'px';
-            ring.style.top = y + 'px';
-            
-            if (lastTarget !== icon.id) {
-                lastTarget = icon.id;
-                hoverStart = Date.now();
-                beep(600, 0.1);
-            } else if (Date.now() - hoverStart > 1000) {
-                runCommand(icon.id);
-                hoverStart = Date.now() + 5000; // منع تكرار الضغط
+let hoverTarget = null;
+let hoverTime = 0;
+
+function checkButtons(x, y) {
+    const btns = document.querySelectorAll('.hud-btn');
+    btns.forEach(btn => {
+        const rect = btn.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+            btn.classList.add('active');
+            if (hoverTarget !== btn.id) {
+                hoverTarget = btn.id;
+                hoverTime = Date.now();
+                playTechSound(440, 'square', 0.1);
+            } else if (Date.now() - hoverTime > 1000) {
+                execute(btn.id);
+                hoverTime = Date.now() + 5000; // منع التكرار
             }
         } else {
-            icon.classList.remove('active-hover');
+            btn.classList.remove('active');
         }
     });
-    if (!hit) { ring.style.display = 'none'; lastTarget = null; }
 }
 
-function runCommand(id) {
-    beep(1200, 0.2);
-    if (id === 'clear-cmd') sCtx.clearRect(0,0,5000,5000);
-    if (id === 'color-cmd') brushColor = `hsl(${Math.random()*360}, 100%, 50%)`;
-    if (id === 'save-cmd') {
+function execute(id) {
+    playTechSound(1200, 'sine', 0.3);
+    if (id === 'btn-clear') bCtx.clearRect(0,0,9999,9999);
+    if (id === 'btn-color') currentColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+    if (id === 'btn-save') {
         const link = document.createElement('a');
-        link.download = 'KIMO_2026.png';
-        link.href = segCanvas.toDataURL();
+        link.download = 'KIMO_ART.png';
+        link.href = bodyCanvas.toDataURL();
         link.click();
     }
 }
 
-// تشغيل المحركات
+// تشغيل الـ AI
 const selfie = new SelfieSegmentation({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`});
 selfie.setOptions({modelSelection: 1});
 
 const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
-hands.setOptions({maxNumHands: 1, minDetectionConfidence: 0.7});
+hands.setOptions({maxNumHands: 1, minDetectionConfidence: 0.75});
 
-const camera = new Camera(videoElement, {
+const camera = new Camera(video, {
     onFrame: async () => {
-        await selfie.send({image: videoElement});
-        await hands.send({image: videoElement});
+        await selfie.send({image: video});
+        await hands.send({image: video});
     },
     width: 1280, height: 720
 });
 
 selfie.onResults(onResults);
 
-window.onload = () => {
-    document.getElementById('load-status').innerText = 'ACCESS GRANTED. WELCOME KIMO.';
-    setTimeout(() => {
-        document.getElementById('matrix-loader').style.transform = 'translateY(-100%)';
-        camera.start();
-    }, 2000);
-};
+function startCamera() {
+    camera.start().catch(err => alert("يرجى تفعيل الكاميرا: " + err));
+}
 
-// نظام PWA
+// نظام الـ PWA
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault(); deferredPrompt = e;
-    document.getElementById('pwa-btn').style.display = 'block';
+    document.getElementById('pwa-banner').style.display = 'block';
 });
-document.getElementById('pwa-btn').onclick = () => {
+document.getElementById('pwa-banner').onclick = () => {
     deferredPrompt.prompt();
 }
 </script>
