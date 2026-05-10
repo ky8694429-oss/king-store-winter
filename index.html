@@ -2,224 +2,181 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRINT - NEURAL SYSTEM 2026</title>
-    <link rel="manifest" href="data:application/manifest+json,{'name':'PRINT AI','short_name':'PRINT','start_url':'.','display':'standalone','background_color':'#000000','theme_color':'#00ffff','icons':[{'src':'https://cdn-icons-png.flaticon.com/512/2592/2592230.png','sizes':'512x512','type':'image/png'}]}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PRINT - GAMING WORLD 2026</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 
     <style>
-        :root { --neon: #00ffff; --glass: rgba(255, 255, 255, 0.05); --shadow: 0 0 25px rgba(0, 255, 255, 0.5); }
-        body { margin: 0; background: #000; color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; user-select: none; }
+        :root { --neon: #00ffff; --gold: #ffcc00; --pink: #ff00ff; }
+        body { margin: 0; background: #000; color: white; font-family: 'Arial Black', sans-serif; overflow: hidden; touch-action: none; }
         
-        /* شاشة الدخول الاحترافية */
-        #splash { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 1s; border: 2px solid var(--neon); }
-        .loader-ring { width: 150px; height: 150px; border: 5px solid transparent; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* دخلة الألعاب */
+        #game-loader { position: fixed; inset: 0; background: linear-gradient(45deg, #000, #1a1a1a); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 5px solid var(--neon); }
+        .play-btn { background: var(--neon); color: #000; padding: 20px 60px; font-size: 2rem; border-radius: 50px; cursor: pointer; box-shadow: 0 0 50px var(--neon); border: none; font-weight: 900; animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-        /* الواجهة الرئيسية - HUD */
-        #app-container { position: relative; width: 100vw; height: 100vh; display: none; }
-        video { position: absolute; transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; opacity: 0.3; }
-        canvas { position: absolute; transform: scaleX(-1); inset: 0; }
+        /* الشاشة الرئيسية */
+        canvas { position: absolute; inset: 0; filter: drop-shadow(0 0 10px var(--neon)); }
+        #camera-feed { position: absolute; width: 150px; height: 100px; bottom: 20px; left: 20px; border: 2px solid var(--neon); border-radius: 10px; opacity: 0.5; transform: scaleX(-1); }
         
-        /* أيقونات 3D والتحكم الهوائي */
-        .dock { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 1000; background: var(--glass); padding: 20px; border-radius: 30px; border: 1px solid var(--neon); backdrop-filter: blur(15px); box-shadow: var(--shadow); }
-        .icon { width: 70px; height: 70px; display: flex; justify-content: center; align-items: center; font-size: 28px; border-radius: 20px; background: rgba(0,0,0,0.7); cursor: pointer; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; border: 1px solid transparent; }
-        .icon.hovered { transform: scale(1.4) translateY(-20px); border-color: var(--neon); box-shadow: 0 10px 40px var(--neon); }
-        
-        /* نظام الإشعارات */
-        .notification { position: fixed; top: 30px; right: 30px; background: var(--glass); border-right: 5px solid var(--neon); padding: 15px 30px; border-radius: 10px; backdrop-filter: blur(10px); transform: translateX(200%); transition: 0.5s; z-index: 2000; }
-        .notification.show { transform: translateX(0); }
+        /* أيقونات Subway */
+        .hud-ui { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; z-index: 500; }
+        .game-icon { width: 80px; height: 80px; background: var(--glass); border: 4px solid #fff; border-radius: 20px; display: flex; justify-content: center; align-items: center; font-size: 2.5rem; cursor: pointer; transition: 0.2s; box-shadow: 0 10px 0 #555; }
+        .game-icon:active { transform: translateY(10px); box-shadow: 0 0 0 #555; }
+        .game-icon:hover { background: var(--neon); transform: rotate(10deg); }
 
-        .brand { position: fixed; bottom: 10px; right: 20px; font-size: 12px; color: var(--neon); opacity: 0.7; letter-spacing: 2px; }
-        #pwa-prompt { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--neon); color: #000; padding: 12px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; display: none; z-index: 3000; box-shadow: 0 0 30px var(--neon); }
+        .score-board { position: fixed; top: 20px; right: 20px; font-size: 20px; color: var(--gold); text-shadow: 0 0 10px var(--gold); }
+        #install-tab { position: fixed; bottom: 20px; right: 20px; background: var(--pink); color: #fff; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
 
-<div id="splash">
-    <h1 style="color: var(--neon); letter-spacing: 15px;">PRINT AI</h1>
-    <div class="loader-ring"></div>
-    <div onclick="startSystem()" style="margin-top: 30px; border: 1px solid var(--neon); padding: 10px 40px; cursor: pointer; color: var(--neon);">INITIALIZE SYSTEM</div>
+<div id="game-loader">
+    <h1 style="color: var(--neon); margin-bottom: 40px; font-size: 4rem;">PRINT AI</h1>
+    <button class="play-btn" onclick="startGame()">P L A Y</button>
+    <p style="margin-top: 20px;">[ AUTO-CONTROL ENABLED ]</p>
 </div>
 
-<div id="pwa-prompt">تثبيت تطبيق PRINT الذكي 📲</div>
-
-<div id="app-container">
-    <video id="input_video" playsinline></video>
-    <canvas id="output_canvas"></canvas>
-    
-    <div class="dock">
-        <div class="icon" id="btn-clear" title="مسح">🗑️</div>
-        <div class="icon" id="btn-brush" title="تغيير الخط">🖌️</div>
-        <div class="icon" id="btn-bg" title="تغيير الخلفية">🌌</div>
-        <div class="icon" id="btn-save" title="حفظ">💾</div>
-    </div>
+<div class="hud-ui">
+    <div class="game-icon" id="clear">🗑️</div>
+    <div class="game-icon" id="color">🎨</div>
+    <div class="game-icon" id="save">💾</div>
 </div>
 
-<div class="notification" id="notif">
-    <b>تم تفعيل الذكاء الاصطناعي</b><br>
-    استخدم إصبعك للرسم الهوائي والتفاعل مع الأيقونات.
-</div>
+<div class="score-board">COMBO: <span id="combo">0</span></div>
+<div id="install-tab">تنزيل اللعبة 🎮</div>
 
-<div class="brand">2026 POWERED BY KIMO</div>
+<video id="camera-feed" playsinline></video>
+<canvas id="game-canvas"></canvas>
 
 <script>
-let audioCtx;
-const videoElement = document.getElementById('input_video');
-const canvasElement = document.getElementById('output_canvas');
-const canvasCtx = canvasElement.getContext('2d');
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const video = document.getElementById('camera-feed');
+let particles = [];
+let combo = 0;
 let currentColor = '#00ffff';
-let isCameraBg = true;
-let drawingData = [];
-let brushSize = 8;
+let audioCtx;
 
-// صوت تقني فخم
-function playSound(f, d = 0.1) {
+// صوت ألعاب
+function playSfx(f, type = 'square') {
     if(!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const g = audioCtx.createGain();
-    osc.frequency.value = f;
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + d);
+    osc.type = type; osc.frequency.value = f;
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
     osc.connect(g); g.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + d);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
 }
 
-function startSystem() {
+function startGame() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    document.getElementById('splash').style.opacity = '0';
-    setTimeout(() => {
-        document.getElementById('splash').remove();
-        document.getElementById('app-container').style.display = 'block';
-        showNotif();
-        initAI();
-    }, 1000);
+    playSfx(440);
+    document.getElementById('game-loader').style.display = 'none';
+    init();
 }
 
-function showNotif() {
-    const n = document.getElementById('notif');
-    n.classList.add('show');
-    setTimeout(() => n.classList.remove('show'), 5000);
+// نظام الجزيئات (Particles)
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y;
+        this.color = color;
+        this.size = Math.random() * 10 + 5;
+        this.speedX = Math.random() * 6 - 3;
+        this.speedY = Math.random() * 6 - 3;
+    }
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.size *= 0.95;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
+    }
 }
 
-function onResults(results) {
-    canvasElement.width = window.innerWidth;
-    canvasElement.height = window.innerHeight;
-    canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+// التحكم باللمس والماوس (عشان لو الكاميرا فصلت)
+window.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+window.addEventListener('touchmove', (e) => handleMove(e.touches[0].clientX, e.touches[0].clientY));
 
-    // 1. معالجة الأجسام (Segmentation) - تحويل أي جسم لنيون
-    if (results.segmentationMask) {
-        canvasCtx.drawImage(results.segmentationMask, 0, 0, canvasElement.width, canvasElement.height);
-        canvasCtx.globalCompositeOperation = 'source-in';
-        canvasCtx.fillStyle = currentColor;
-        canvasCtx.globalAlpha = 0.4;
-        canvasCtx.fillRect(0,0, canvasElement.width, canvasElement.height);
-        canvasCtx.globalCompositeOperation = 'destination-atop';
-    }
-
-    if (!isCameraBg) {
-        canvasCtx.fillStyle = '#000';
-        canvasCtx.fillRect(0,0, canvasElement.width, canvasElement.height);
-    }
-
-    // 2. تتبع الإيد والتحكم الهوائي
-    if (results.multiHandLandmarks) {
-        for (const landmarks of results.multiHandLandmarks) {
-            const index = landmarks[8];
-            const x = (1 - index.x) * canvasElement.width;
-            const y = index.y * canvasElement.height;
-
-            // رسم مؤشر الإيد
-            canvasCtx.shadowBlur = 20; canvasCtx.shadowColor = currentColor;
-            canvasCtx.fillStyle = "white";
-            canvasCtx.beginPath(); canvasCtx.arc(x, y, 10, 0, Math.PI*2); canvasCtx.fill();
-
-            drawingData.push({x, y, color: currentColor, size: brushSize});
-            handleAirUI(x, y);
-        }
-    }
-
-    // 3. رسم الخطوط (العائمة)
-    canvasCtx.lineCap = 'round';
-    canvasCtx.shadowBlur = 10;
-    drawingData.forEach((p, i) => {
-        if(i > 0) {
-            canvasCtx.strokeStyle = p.color;
-            canvasCtx.lineWidth = p.size;
-            canvasCtx.beginPath();
-            canvasCtx.moveTo(drawingData[i-1].x, drawingData[i-1].y);
-            canvasCtx.lineTo(p.x, p.y);
-            canvasCtx.stroke();
-        }
-    });
-    canvasCtx.restore();
+function handleMove(x, y) {
+    for(let i=0; i<3; i++) particles.push(new Particle(x, y, currentColor));
+    combo++;
+    document.getElementById('combo').innerText = combo;
+    checkButtons(x, y);
 }
 
-function handleAirUI(x, y) {
-    const icons = document.querySelectorAll('.icon');
-    icons.forEach(icon => {
-        const r = icon.getBoundingClientRect();
+function checkButtons(x, y) {
+    const btns = document.querySelectorAll('.game-icon');
+    btns.forEach(btn => {
+        const r = btn.getBoundingClientRect();
         if(x > r.left && x < r.right && y > r.top && y < r.bottom) {
-            if(!icon.classList.contains('hovered')) {
-                icon.classList.add('hovered');
-                playSound(800);
-                setTimeout(() => triggerAction(icon.id), 1200); // تفعيل بعد ثانية من التثبيت
+            if(!btn.dataset.active) {
+                btn.dataset.active = "true";
+                trigger(btn.id);
             }
-        } else {
-            icon.classList.remove('hovered');
-        }
+        } else { delete btn.dataset.active; }
     });
 }
 
-function triggerAction(id) {
-    playSound(1200, 0.2);
-    if(id === 'btn-clear') drawingData = [];
-    if(id === 'btn-brush') brushSize = brushSize > 20 ? 8 : brushSize + 5;
-    if(id === 'btn-bg') {
-        isCameraBg = !isCameraBg;
-        videoElement.style.opacity = isCameraBg ? "0.3" : "0";
-    }
-    if(id === 'btn-save') {
+function trigger(id) {
+    playSfx(880, 'sine');
+    if(id === 'clear') { particles = []; combo = 0; }
+    if(id === 'color') currentColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+    if(id === 'save') {
         const link = document.createElement('a');
-        link.download = 'PRINT_ART_2026.png';
-        link.href = canvasElement.toDataURL();
+        link.download = 'PRINT_WIN.png';
+        link.href = canvas.toDataURL();
         link.click();
     }
 }
 
-// تهيئة محركات AI
-async function initAI() {
-    const selfie = new SelfieSegmentation({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`});
-    selfie.setOptions({modelSelection: 1});
-    
-    const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
-    hands.setOptions({maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7});
+// تشغيل الكاميرا والـ AI كخيار إضافي
+async function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    const camera = new Camera(videoElement, {
-        onFrame: async () => {
-            await selfie.send({image: videoElement});
-            await hands.send({image: videoElement});
-        },
+    const hands = new Hands({locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+    hands.setOptions({maxNumHands: 1, minDetectionConfidence: 0.7});
+    hands.onResults(res => {
+        if(res.multiHandLandmarks && res.multiHandLandmarks.length > 0) {
+            const tip = res.multiHandLandmarks[0][8];
+            handleMove((1 - tip.x) * canvas.width, tip.y * canvas.height);
+        }
+    });
+
+    const cam = new Camera(video, {
+        onFrame: async () => { await hands.send({image: video}); },
         width: 1280, height: 720
     });
-    
-    selfie.onResults(onResults);
-    camera.start();
+    cam.start().catch(() => console.log("Camera Blocked - Mouse Control Active"));
+
+    function animate() {
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((p, i) => {
+            p.update(); p.draw();
+            if(p.size < 0.5) particles.splice(i, 1);
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
 }
 
-// نظام PWA
-let deferredPrompt;
+// نظام الـ PWA
 window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); deferredPrompt = e;
-    document.getElementById('pwa-prompt').style.display = 'block';
+    e.preventDefault();
+    const btn = document.getElementById('install-tab');
+    btn.style.display = 'block';
+    btn.onclick = () => e.prompt();
 });
-document.getElementById('pwa-prompt').onclick = () => {
-    deferredPrompt.prompt();
-}
 </script>
+
+<div style="position:fixed; bottom:10px; width:100%; text-align:center; color:var(--neon); font-size:10px; opacity:0.5;">
+    2026 POWERED BY KIMO | GAMING ENGINE v1.0
+</div>
 </body>
 </html>
