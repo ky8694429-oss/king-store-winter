@@ -3,185 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>موقع السحر الرقمي - Hand & Face Art with Sound</title>
+    <title>KIMO - Digital Magic 2026</title>
+    <!-- Manifest لتنزيل الموقع كتطبيق -->
+    <link rel="manifest" href="data:application/manifest+json,{'name':'KIMO Magic','short_name':'KIMO','start_url':'.','display':'standalone','background_color':'#000000','theme_color':'#00ffff','icons':[{'src':'https://cdn-icons-png.flaticon.com/512/124/124010.png','sizes':'512x512','type':'image/png'}]}">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
     <style>
-        body { margin: 0; background: #050505; color: white; font-family: sans-serif; overflow: hidden; }
-        #container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
-        video { position: absolute; transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; opacity: 0.15; }
-        canvas { position: absolute; transform: scaleX(-1); width: 100%; height: 100%; object-fit: cover; }
+        :root { --neon: #00ffff; }
+        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        #bg-canvas { position: fixed; inset: 0; z-index: -1; transition: 0.5s; }
+        #draw-canvas { position: absolute; inset: 0; transform: scaleX(-1); }
+        video { display: none; }
+
+        /* أيقونات 3D */
+        .ui-panel { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; z-index: 100; }
+        .icon-3d { 
+            width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid var(--neon);
+            border-radius: 15px; display: flex; justify-content: center; align-items: center;
+            font-size: 24px; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 15px var(--neon);
+            transition: 0.3s; position: relative;
+        }
+        .icon-3d.hovered { transform: translateY(-20px) scale(1.2); background: var(--neon); color: black; box-shadow: 0 0 40px var(--neon); }
+
+        .brand { position: fixed; bottom: 10px; right: 20px; font-weight: bold; color: var(--neon); text-shadow: 0 0 10px var(--neon); font-family: monospace; letter-spacing: 2px; }
         
-        .ui-panel { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
-        .btn { background: rgba(255, 255, 255, 0.05); border: 1px solid cyan; color: cyan; padding: 12px 24px; cursor: pointer; backdrop-filter: blur(10px); border-radius: 8px; font-weight: bold; transition: 0.3s; text-align: center; }
-        .btn:hover { background: cyan; color: black; box-shadow: 0 0 20px cyan; transform: scale(1.05); }
-        
-        #controls-info { position: absolute; top: 20px; right: 20px; text-align: right; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 12px; border-right: 5px solid cyan; pointer-events: none; }
-        h2 { margin: 0 0 10px 0; color: cyan; font-size: 18px; }
-        p { margin: 5px 0; font-size: 14px; color: #ccc; }
-        
-        /* رسالة تفعيل الصوت */
-        #audio-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; }
+        #install-btn { position: fixed; top: 20px; right: 20px; display: none; background: var(--neon); color: black; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="audio-prompt">
-    <h2>اضغط هنا لتفعيل تجربة الصوت السحرية 🔊</h2>
-    <div class="btn" onclick="startExperience()">ابدأ التجربة</div>
+<div id="install-btn">تنزيل التطبيق 📲</div>
+<canvas id="bg-canvas"></canvas>
+<video id="input_video"></video>
+<canvas id="draw-canvas"></canvas>
+
+<div class="ui-panel">
+    <div class="icon-3d" id="btn-clear" data-action="clear">🗑️</div>
+    <div class="icon-3d" id="btn-color" data-action="color">🎨</div>
+    <div class="icon-3d" id="btn-bg" data-action="bg">🖼️</div>
+    <div class="icon-3d" id="btn-save" data-action="save">💾</div>
 </div>
 
-<div id="container">
-    <video id="input_video" playsinline></video>
-    <canvas id="output_canvas"></canvas>
-    
-    <div class="ui-panel">
-        <div class="btn" onclick="clearCanvas(); playClick();">❌ مسح الرسم</div>
-        <div class="btn" onclick="changeColor('#00ffff'); playClick();">🔵 أزرق نيون</div>
-        <div class="btn" onclick="changeColor('#ff00ff'); playClick();">🔴 فوشيا</div>
-        <div class="btn" onclick="changeColor('#ffff00'); playClick();">🟡 أصفر</div>
-        <div class="btn" onclick="saveImage(); playClick();" style="border-color: #00ff00; color: #00ff00; margin-top: 20px;">💾 حفظ الصورة</div>
-    </div>
-
-    <div id="controls-info">
-        <h2>التحكم السحري ✨</h2>
-        <p>1. صباعك بيرسم وبيعمل مزيكا</p>
-        <p>2. وشك بيتحول لخطوط رقمية</p>
-        <p>3. حرك إيدك قدام الكاميرا للتفاعل</p>
-    </div>
-</div>
+<div class="brand">2026 POWERED BY KIMO</div>
 
 <script>
-// --- إعدادات الصوت ---
-let audioCtx;
-let oscillator;
-let gainNode;
-
-function initAudio() {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    oscillator = audioCtx.createOscillator();
-    gainNode = audioCtx.createGain();
-    
-    oscillator.type = 'sine';
-    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.start();
-}
-
-function playClick() {
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    osc.type = 'square';
-    osc.connect(g);
-    g.connect(audioCtx.destination);
-    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.1);
-}
-
-function startExperience() {
-    document.getElementById('audio-prompt').style.display = 'none';
-    initAudio();
-    runDetections();
-}
-
-// --- إعدادات الكاميرا والـ AI ---
+let deferredPrompt;
+const drawCanvas = document.getElementById('draw-canvas');
+const ctx = drawCanvas.getContext('2d');
 const videoElement = document.getElementById('input_video');
-const canvasElement = document.getElementById('output_canvas');
-const canvasCtx = canvasElement.getContext('2d');
-
 let currentColor = '#00ffff';
-let drawingPoints = [];
+let currentBG = 0;
+const backgrounds = ['#000000', '#0a0a2e', '#1a001a'];
 
-function clearCanvas() { drawingPoints = []; }
-function changeColor(color) { currentColor = color; }
-
-function saveImage() {
-    const link = document.createElement('a');
-    link.download = 'MagicArt_Kimo.png';
-    link.href = canvasElement.toDataURL('image/png');
-    link.click();
-}
+// تتبع الضغط من الهوا
+let hoverTimers = {};
 
 function onResults(results) {
-    canvasElement.width = videoElement.videoWidth;
-    canvasElement.height = videoElement.videoHeight;
-    canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    
-    // رسم الوش
-    if (results.faceLandmarks) {
-        drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION, {color: '#ffffff20', lineWidth: 0.5});
-        drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_RIGHT_EYE, {color: currentColor, lineWidth: 1});
-        drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_LEFT_EYE, {color: currentColor, lineWidth: 1});
-    }
+    drawCanvas.width = window.innerWidth;
+    drawCanvas.height = window.innerHeight;
+    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
 
-    // رسم الإيد والصوت
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    if (results.multiHandLandmarks) {
         for (const landmarks of results.multiHandLandmarks) {
-            const indexFingerTip = landmarks[8];
-            const x = indexFingerTip.x * canvasElement.width;
-            const y = indexFingerTip.y * canvasElement.height;
-            
-            drawingPoints.push({ x, y, color: currentColor });
-            
-            // تحديث الصوت بناءً على الارتفاع (Y)
-            if (audioCtx) {
-                const freq = 200 + (1 - indexFingerTip.y) * 800;
-                oscillator.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
-                gainNode.gain.setTargetAtTime(0.05, audioCtx.currentTime, 0.05);
+            const indexTip = landmarks[8];
+            const x = (1 - indexTip.x) * drawCanvas.width;
+            const y = indexTip.y * drawCanvas.height;
+
+            // رسم مكان الصباع
+            ctx.shadowBlur = 20; ctx.shadowColor = currentColor;
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI*2); ctx.fill();
+
+            // فحص التصادم مع الأيقونات (الضغط من الهوا)
+            checkAirTouch(x, y);
+        }
+    }
+}
+
+function checkAirTouch(x, y) {
+    const icons = document.querySelectorAll('.icon-3d');
+    icons.forEach(icon => {
+        const rect = icon.getBoundingClientRect();
+        if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+            icon.classList.add('hovered');
+            if (!hoverTimers[icon.id]) {
+                hoverTimers[icon.id] = setTimeout(() => executeAction(icon.dataset.action), 1000);
             }
-
-            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#ffffff', lineWidth: 1});
-            drawLandmarks(canvasCtx, landmarks, {color: currentColor, radius: 4});
+        } else {
+            icon.classList.remove('hovered');
+            clearTimeout(hoverTimers[icon.id]);
+            delete hoverTimers[icon.id];
         }
-    } else {
-        if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-    }
-    
-    // رسم الخطوط
-    if (drawingPoints.length > 1) {
-        canvasCtx.lineWidth = 5;
-        canvasCtx.lineCap = 'round';
-        for(let i = 1; i < drawingPoints.length; i++) {
-            canvasCtx.beginPath();
-            canvasCtx.strokeStyle = drawingPoints[i].color;
-            canvasCtx.moveTo(drawingPoints[i-1].x, drawingPoints[i-1].y);
-            canvasCtx.lineTo(drawingPoints[i].x, drawingPoints[i].y);
-            canvasCtx.stroke();
-        }
-    }
-    canvasCtx.restore();
+    });
 }
 
-const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
-faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5 });
+function executeAction(action) {
+    if (action === 'clear') ctx.clearRect(0,0,9000,9000);
+    if (action === 'color') currentColor = ['#ff00ff', '#00ffff', '#ffff00'][Math.floor(Math.random()*3)];
+    if (action === 'bg') {
+        currentBG = (currentBG + 1) % backgrounds.length;
+        document.body.style.background = backgrounds[currentBG];
+    }
+    if (action === 'save') {
+        const link = document.createElement('a');
+        link.download = 'KIMO_2026.png';
+        link.href = drawCanvas.toDataURL();
+        link.click();
+    }
+}
 
+// تشغيل الـ AI
 const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
+hands.setOptions({maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7});
+hands.onResults(onResults);
 
-async function runDetections() {
-    const camera = new Camera(videoElement, {
-        onFrame: async () => {
-            const faceResults = await faceMesh.send({image: videoElement});
-            const handResults = await hands.send({image: videoElement});
-        },
-        width: 1280, height: 720
-    });
-    camera.start();
-}
+const camera = new Camera(videoElement, {
+    onFrame: async () => { await hands.send({image: videoElement}); },
+    width: 1280, height: 720
+});
+camera.start();
 
-faceMesh.onResults((faceRes) => {
-    hands.onResults((handRes) => {
-        onResults({...faceRes, ...handRes});
-    });
+// إشعار تحميل التطبيق
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('install-btn').style.display = 'block';
+});
+
+document.getElementById('install-btn').addEventListener('click', () => {
+    deferredPrompt.prompt();
+    document.getElementById('install-btn').style.display = 'none';
 });
 </script>
 </body>
